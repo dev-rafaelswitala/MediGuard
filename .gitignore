@@ -21,3 +21,6 @@ local.properties
 # Local sideload APKs (do not commit binaries)
 /MediGuardV*.apk
 /*.apk
+
+# Local emulator screenshots
+/tmp-screens/
