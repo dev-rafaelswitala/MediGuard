@@ -13,8 +13,10 @@ import com.rafaelswitala.mediguard.data.settings.DayPeriodSettingsProvider
 import com.rafaelswitala.mediguard.domain.grouping.MedicationGroupingService
 import com.rafaelswitala.mediguard.domain.model.FrequencyType
 import com.rafaelswitala.mediguard.domain.model.Medication
+import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
 import com.rafaelswitala.mediguard.domain.model.ScheduleDataCodec
+import com.rafaelswitala.mediguard.ui.theme.IntakeGroupColors
 import com.rafaelswitala.mediguard.domain.reminder.NextIntakeCalculator
 import com.rafaelswitala.mediguard.domain.reminder.UpcomingIntake
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
@@ -115,13 +117,24 @@ class MedicationViewModel @Inject constructor(
                 if (!suppressGroupCleanup) runGroupCleanup(schedules)
             }
         }
+        viewModelScope.launch {
+            ensurePrnGrouping()
+        }
     }
 
     fun addMedication(medication: Medication) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                val medicationId = addMedicationUseCase(medication)
+                val toSave = if (medication.planType == MedicationPlanType.PRN) {
+                    medication.copy(intakeGroupId = IntakeGroupColors.PRN_GROUP_ID)
+                } else {
+                    medication
+                }
+                val medicationId = addMedicationUseCase(toSave)
+                if (toSave.planType == MedicationPlanType.PRN) {
+                    replaceSchedulesInternal(medicationId, emptyList())
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     successMessage = "Medication and reminders saved",
@@ -140,7 +153,15 @@ class MedicationViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                medicationRepository.updateMedication(medication)
+                val toSave = if (medication.planType == MedicationPlanType.PRN) {
+                    medication.copy(intakeGroupId = IntakeGroupColors.PRN_GROUP_ID)
+                } else {
+                    medication
+                }
+                medicationRepository.updateMedication(toSave)
+                if (toSave.planType == MedicationPlanType.PRN) {
+                    replaceSchedulesInternal(toSave.id, emptyList())
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     successMessage = "Medication updated"
@@ -339,13 +360,29 @@ class MedicationViewModel @Inject constructor(
         }
     }
 
+    private suspend fun ensurePrnGrouping() {
+        medicationRepository.getAllActiveMedications().first()
+            .filter { it.planType == MedicationPlanType.PRN && it.intakeGroupId != IntakeGroupColors.PRN_GROUP_ID }
+            .forEach { medication ->
+                medicationRepository.updateMedication(
+                    medication.copy(intakeGroupId = IntakeGroupColors.PRN_GROUP_ID)
+                )
+                replaceSchedulesInternal(medication.id, emptyList())
+            }
+    }
+
 }
 
 private fun sortMedicationsByName(medications: List<Medication>): List<Medication> {
     val collator = Collator.getInstance(Locale.getDefault()).apply {
         strength = Collator.PRIMARY
     }
-    return medications.sortedWith { first, second -> collator.compare(first.name, second.name) }
+    return medications.sortedWith { first, second ->
+        val aPrn = if (first.planType == MedicationPlanType.PRN) 1 else 0
+        val bPrn = if (second.planType == MedicationPlanType.PRN) 1 else 0
+        val prnCompare = aPrn.compareTo(bPrn)
+        if (prnCompare != 0) prnCompare else collator.compare(first.name, second.name)
+    }
 }
 
 data class MedicationUiState(

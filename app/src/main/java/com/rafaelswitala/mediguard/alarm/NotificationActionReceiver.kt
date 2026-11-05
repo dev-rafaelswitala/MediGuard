@@ -57,6 +57,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             confirmMedicationIntakeUseCase(historyId)
         }
         alarmScheduler.cancelOneTimeReminder(notificationId)
+        alarmScheduler.cancelWindowEnd(notificationId)
         notificationManager.cancelNotification(notificationId)
     }
 

@@ -116,6 +116,22 @@ class AlarmRingingService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val lockScreenTitle = intent?.getStringExtra(EXTRA_LOCK_SCREEN_TITLE)
+            .orEmpty()
+            .ifBlank { getString(R.string.medication_reminder) }
+        val publicVersion = NotificationCompat.Builder(this, CHANNEL_ID_ALARM_RINGING)
+            .setSmallIcon(R.drawable.ic_notification_logo)
+            .setColor(getColorCompat(R.color.primary))
+            .setContentTitle(lockScreenTitle)
+            .setContentText("")
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(contentIntent)
+            .build()
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID_ALARM_RINGING)
             .setSmallIcon(R.drawable.ic_notification_logo)
             .setColor(getColorCompat(R.color.primary))
@@ -124,7 +140,8 @@ class AlarmRingingService : Service() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicVersion)
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(contentIntent)
@@ -268,6 +285,7 @@ class AlarmRingingService : Service() {
         private const val EXTRA_RINGTONE_URI = "ringtone_uri"
         private const val EXTRA_TITLE = "title"
         private const val EXTRA_MESSAGE = "message"
+        private const val EXTRA_LOCK_SCREEN_TITLE = "lock_screen_title"
         private const val EXTRA_TAKEN_LABEL = "taken_label"
         private const val EXTRA_SNOOZE_LABEL = "snooze_label"
         private const val EXTRA_CHANGE_TIME_LABEL = "change_time_label"
@@ -285,7 +303,8 @@ class AlarmRingingService : Service() {
             takenLabel: String,
             snoozeLabel: String,
             changeTimeLabel: String,
-            stopLabel: String
+            stopLabel: String,
+            lockScreenTitle: String = title
         ) {
             val intent = Intent(context, AlarmRingingService::class.java).apply {
                 action = ACTION_START
@@ -293,6 +312,7 @@ class AlarmRingingService : Service() {
                 putExtra(EXTRA_RINGTONE_URI, ringtoneUri)
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_MESSAGE, message)
+                putExtra(EXTRA_LOCK_SCREEN_TITLE, lockScreenTitle)
                 putExtra(ReminderActions.EXTRA_SCHEDULE_IDS, ReminderActions.idsToCsv(scheduleIds))
                 putExtra(ReminderActions.EXTRA_HISTORY_IDS, ReminderActions.idsToCsv(historyIds))
                 putExtra(ReminderActions.EXTRA_SCHEDULED_TIME, scheduledTime)

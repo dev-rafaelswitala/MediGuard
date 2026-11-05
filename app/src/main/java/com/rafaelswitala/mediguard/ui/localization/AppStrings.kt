@@ -7,819 +7,823 @@ package com.rafaelswitala.mediguard.ui.localization
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.rafaelswitala.mediguard.data.settings.AppLanguage
 
-data class AppStrings(
-    val appName: String,
-    val home: String,
-    val medications: String,
-    val history: String,
-    val settings: String,
-    val more: String,
-    val profile: String,
-    val addMedication: String,
-    val editMedication: String,
-    val noReminders: String,
-    val noRemindersBody: String,
-    val createMedicationNow: String,
-    val medicationName: String,
-    val dosage: String,
-    val unit: String,
-    val notes: String,
-    val durationDays: String,
-    val treatmentLimitDoses: String,
-    val tabletsLeft: String,
-    val remainingVolume: String,
-    val dosePerIntake: String,
-    val doseQuantity: String,
-    val medicationForm: String,
-    val treatment: String,
-    val ongoing: String,
-    val limited: String,
-    val supplyAlert: String,
-    val alertAt: String,
-    val reminderType: String,
-    val save: String,
-    val update: String,
-    val delete: String,
-    val edit: String,
-    val view: String,
-    val details: String,
-    val close: String,
-    val remove: String,
-    val cancel: String,
-    val confirmDeleteTitle: String,
-    val confirmDeleteBody: String,
-    val lowSupplyTitle: String,
-    val lowSupplyBody: String,
-    val restock: String,
-    val newStock: String,
-    val saveStock: String,
-    val noHistory: String,
-    val adherence: String,
-    val takenNow: String,
-    val dueNow: String,
-    val nextIntakes: String,
-    val noDueMedication: String,
-    val markGroupTaken: String,
-    val scheduled: String,
-    val taken: String,
-    val status: String,
-    val theme: String,
-    val language: String,
-    val light: String,
-    val dark: String,
-    val system: String,
-    val english: String,
-    val german: String,
-    val alarmSound: String,
-    val alertMode: String,
-    val alertModeAlarm: String,
-    val alertModeSilentNotification: String,
-    val alertModeSoundNotification: String,
-    val selectedSound: String,
-    val chooseSound: String,
-    val defaultSound: String,
-    val exactAlarmPermission: String,
-    val exactAlarmPermissionBody: String,
-    val allowExactAlarms: String,
-    val notificationMedicationReminder: String,
-    val notificationMedicationGroupReminder: String,
-    val notificationUnlockDetails: String,
-    val notificationPleaseTake: String,
-    val notificationMultipleIntro: String,
-    val snooze: String,
-    val changeTimeOnce: String,
-    val stopAlarm: String,
-    val exactTime: String,
-    val timeRange: String,
-    val dayPeriod: String,
-    val interval: String,
-    val weekly: String,
-    val timesExample: String,
-    val from: String,
-    val to: String,
-    val intervalHours: String,
-    val startTime: String,
-    val calculatedEndDate: String,
-    val weeklyTime: String,
-    val approximatePeriods: String,
-    val dayPeriodSettings: String,
-    val dayPeriodSettingsHint: String,
-    val dayPeriodGapError: String,
-    val invalidTime: String,
-    val validationHint: String,
-    val stock: String,
-    val durationOngoingHint: String,
-    val limitedByDaysOrDoses: String,
-    val limitByDays: String,
-    val limitByDoses: String,
-    val schedules: String,
-    val noSchedules: String,
-    val selectedCount: String,
-    val deleteSelected: String,
-    val confirmDeleteSelectedTitle: String,
-    val confirmDeleteSelectedBody: String,
-    val statusPending: String,
-    val statusConfirmed: String,
-    val statusMissed: String,
-    val statusSnoozed: String,
-    val groupTogetherTitle: String,
-    val groupTogetherBody: String,
-    val groupTogetherConfirm: String,
-    val groupTogetherDecline: String,
-    val pickUnifiedTime: String,
-    val group: String,
-    val plan: String,
-    val asNeeded: String,
-    val planSchedule: String,
-    val addTime: String,
-    val everySelectedPeriodIntake: String,
-    val onSelectedDaysAt: String,
-    val remindTogether: String,
-    val daily: String,
-    val ungroup: String,
-    val addToGroup: String,
-    val planFirst: String,
-    val scheduleRequired: String,
-    val moreSchedules: String,
-    // Plan types
-    val planType: String,
-    val planRecurring: String,
-    val planOneShot: String,
-    val planPrn: String,
-    val oneShotDate: String,
-    val oneShotTime: String,
-    val prnNoScheduleHint: String,
-    // History filters / edit
-    val previousMonth: String,
-    val nextMonth: String,
-    val previousYear: String,
-    val nextYear: String,
-    val pickMonthYear: String,
-    val filterMedication: String,
-    val filterStatus: String,
-    val filterAll: String,
-    val onlyEditedLate: String,
-    val editedLateBadge: String,
-    val editIntake: String,
-    val intakeNote: String,
-    val actualTime: String,
-    val useNow: String,
-    val saveEdit: String,
-    // Home sections
-    val missedSection: String,
-    val lateTake: String,
-    val prnSection: String,
-    val takeNow: String,
-    // Profile
-    val profileDisclaimer: String,
-    val add: String,
-    val done: String,
-    val sectionPersonal: String,
-    val sectionGeneralDetails: String,
-    val fullName: String,
-    val address: String,
-    val postalCode: String,
-    val city: String,
-    val phone: String,
-    val email: String,
-    val pharmacyAddress: String,
-    val pharmacyPhone: String,
-    val pregnant: String,
-    val smoking: String,
-    val cigarettesPerDay: String,
-    val additionalInsurance: String,
-    val careInsurance: String,
-    val personalSaved: String,
-    val generalSaved: String,
-    val healthSaved: String,
-    val insuranceSaved: String,
-    val profileSectionSaved: String,
-    val documentImported: String,
-    val documentOpenFailed: String,
-    val saveProfile: String,
-    val clearProfile: String,
-    val clearProfileConfirm: String,
-    val sectionGeneral: String,
-    val sectionAllergies: String,
-    val sectionHealth: String,
-    val sectionInsurance: String,
-    val sectionEmergency: String,
-    val sectionContacts: String,
-    val sectionDocuments: String,
-    val bloodType: String,
-    val heightCm: String,
-    val weightKg: String,
-    val bmi: String,
-    val aidsNotes: String,
-    val organDonor: String,
-    val preferredPharmacy: String,
-    val otherNotes: String,
-    val allergyName: String,
-    val allergySeverity: String,
-    val addAllergy: String,
-    val chronicConditions: String,
-    val implantsNotes: String,
-    val pregnancyNotes: String,
-    val smokingAlcoholNotes: String,
-    val vaccinationNotes: String,
-    val lastCheckupNotes: String,
-    val lastBloodPressure: String,
-    val lastBloodSugar: String,
-    val insuranceName: String,
-    val insuranceNumber: String,
-    val emergencyNotes: String,
-    val contactName: String,
-    val contactCategory: String,
-    val contactSpecialty: String,
-    val contactPhone: String,
-    val contactEmail: String,
-    val contactAddress: String,
-    val contactEmergency: String,
-    val addContact: String,
-    val categoryDoctor: String,
-    val categoryPharmacy: String,
-    val categoryEmergency: String,
-    val categoryFamily: String,
-    val categoryOther: String,
-    val documentTitle: String,
-    val documentCategory: String,
-    val documentDate: String,
-    val addDocument: String,
-    val openDocument: String,
-    val deleteDocument: String,
-    val noDocuments: String,
-    val noContacts: String,
-    val noAllergies: String,
-    val docCategoryLab: String,
-    val docCategoryLetter: String,
-    val docCategoryImaging: String,
-    val docCategoryOther: String,
-    val deleteDataSection: String,
-    val allData: String,
-    val profileData: String,
-    val medicationData: String,
-    val deleteSelectedData: String,
-    val deleteDataConfirm: String,
-    val backupPdf: String,
-    val regularBackupQuestion: String,
-    val backupFrequency: String,
-    val weeklySunday: String,
-    val monthlyLastDay: String,
-    val quarterlyEnd: String,
-    val semiannualEnd: String,
-    val manualPdfExport: String,
-    val fromDate: String,
-    val toDate: String,
-    val allMedications: String,
-    val selectMedications: String,
-    val generatePdf: String,
-    val pdfCreated: String,
-    val invalidDateRange: String,
-    val dataDeleted: String,
-    val yes: String,
-    val no: String,
-    val notSet: String
-)
+class AppStrings(base: AppStrings? = null) {
+    var appName: String = base?.appName.orEmpty()
+    var home: String = base?.home.orEmpty()
+    var medications: String = base?.medications.orEmpty()
+    var history: String = base?.history.orEmpty()
+    var settings: String = base?.settings.orEmpty()
+    var more: String = base?.more.orEmpty()
+    var profile: String = base?.profile.orEmpty()
+    var addMedication: String = base?.addMedication.orEmpty()
+    var editMedication: String = base?.editMedication.orEmpty()
+    var noReminders: String = base?.noReminders.orEmpty()
+    var noRemindersBody: String = base?.noRemindersBody.orEmpty()
+    var createMedicationNow: String = base?.createMedicationNow.orEmpty()
+    var medicationName: String = base?.medicationName.orEmpty()
+    var dosage: String = base?.dosage.orEmpty()
+    var unit: String = base?.unit.orEmpty()
+    var notes: String = base?.notes.orEmpty()
+    var durationDays: String = base?.durationDays.orEmpty()
+    var treatmentLimitDoses: String = base?.treatmentLimitDoses.orEmpty()
+    var tabletsLeft: String = base?.tabletsLeft.orEmpty()
+    var remainingVolume: String = base?.remainingVolume.orEmpty()
+    var dosePerIntake: String = base?.dosePerIntake.orEmpty()
+    var doseQuantity: String = base?.doseQuantity.orEmpty()
+    var medicationForm: String = base?.medicationForm.orEmpty()
+    var treatment: String = base?.treatment.orEmpty()
+    var ongoing: String = base?.ongoing.orEmpty()
+    var limited: String = base?.limited.orEmpty()
+    var supplyAlert: String = base?.supplyAlert.orEmpty()
+    var alertAt: String = base?.alertAt.orEmpty()
+    var reminderType: String = base?.reminderType.orEmpty()
+    var save: String = base?.save.orEmpty()
+    var update: String = base?.update.orEmpty()
+    var delete: String = base?.delete.orEmpty()
+    var edit: String = base?.edit.orEmpty()
+    var view: String = base?.view.orEmpty()
+    var details: String = base?.details.orEmpty()
+    var close: String = base?.close.orEmpty()
+    var remove: String = base?.remove.orEmpty()
+    var cancel: String = base?.cancel.orEmpty()
+    var confirmDeleteTitle: String = base?.confirmDeleteTitle.orEmpty()
+    var confirmDeleteBody: String = base?.confirmDeleteBody.orEmpty()
+    var lowSupplyTitle: String = base?.lowSupplyTitle.orEmpty()
+    var lowSupplyBody: String = base?.lowSupplyBody.orEmpty()
+    var restock: String = base?.restock.orEmpty()
+    var newStock: String = base?.newStock.orEmpty()
+    var saveStock: String = base?.saveStock.orEmpty()
+    var noHistory: String = base?.noHistory.orEmpty()
+    var adherence: String = base?.adherence.orEmpty()
+    var takenNow: String = base?.takenNow.orEmpty()
+    var dueNow: String = base?.dueNow.orEmpty()
+    var nextIntakes: String = base?.nextIntakes.orEmpty()
+    var noDueMedication: String = base?.noDueMedication.orEmpty()
+    var markGroupTaken: String = base?.markGroupTaken.orEmpty()
+    var scheduled: String = base?.scheduled.orEmpty()
+    var taken: String = base?.taken.orEmpty()
+    var status: String = base?.status.orEmpty()
+    var theme: String = base?.theme.orEmpty()
+    var language: String = base?.language.orEmpty()
+    var light: String = base?.light.orEmpty()
+    var dark: String = base?.dark.orEmpty()
+    var system: String = base?.system.orEmpty()
+    var english: String = base?.english.orEmpty()
+    var german: String = base?.german.orEmpty()
+    var alarmSound: String = base?.alarmSound.orEmpty()
+    var alertMode: String = base?.alertMode.orEmpty()
+    var alertModeAlarm: String = base?.alertModeAlarm.orEmpty()
+    var alertModeSilentNotification: String = base?.alertModeSilentNotification.orEmpty()
+    var alertModeSoundNotification: String = base?.alertModeSoundNotification.orEmpty()
+    var selectedSound: String = base?.selectedSound.orEmpty()
+    var chooseSound: String = base?.chooseSound.orEmpty()
+    var defaultSound: String = base?.defaultSound.orEmpty()
+    var exactAlarmPermission: String = base?.exactAlarmPermission.orEmpty()
+    var exactAlarmPermissionBody: String = base?.exactAlarmPermissionBody.orEmpty()
+    var allowExactAlarms: String = base?.allowExactAlarms.orEmpty()
+    var notificationMedicationReminder: String = base?.notificationMedicationReminder.orEmpty()
+    var notificationMedicationGroupReminder: String = base?.notificationMedicationGroupReminder.orEmpty()
+    var notificationUnlockDetails: String = base?.notificationUnlockDetails.orEmpty()
+    var notificationPleaseTake: String = base?.notificationPleaseTake.orEmpty()
+    var notificationMultipleIntro: String = base?.notificationMultipleIntro.orEmpty()
+    var snooze: String = base?.snooze.orEmpty()
+    var changeTimeOnce: String = base?.changeTimeOnce.orEmpty()
+    var stopAlarm: String = base?.stopAlarm.orEmpty()
+    var exactTime: String = base?.exactTime.orEmpty()
+    var timeRange: String = base?.timeRange.orEmpty()
+    var dayPeriod: String = base?.dayPeriod.orEmpty()
+    var interval: String = base?.interval.orEmpty()
+    var weekly: String = base?.weekly.orEmpty()
+    var timesExample: String = base?.timesExample.orEmpty()
+    var from: String = base?.from.orEmpty()
+    var to: String = base?.to.orEmpty()
+    var intervalHours: String = base?.intervalHours.orEmpty()
+    var startTime: String = base?.startTime.orEmpty()
+    var calculatedEndDate: String = base?.calculatedEndDate.orEmpty()
+    var weeklyTime: String = base?.weeklyTime.orEmpty()
+    var approximatePeriods: String = base?.approximatePeriods.orEmpty()
+    var dayPeriodSettings: String = base?.dayPeriodSettings.orEmpty()
+    var dayPeriodSettingsHint: String = base?.dayPeriodSettingsHint.orEmpty()
+    var dayPeriodGapError: String = base?.dayPeriodGapError.orEmpty()
+    var invalidTime: String = base?.invalidTime.orEmpty()
+    var validationHint: String = base?.validationHint.orEmpty()
+    var stock: String = base?.stock.orEmpty()
+    var durationOngoingHint: String = base?.durationOngoingHint.orEmpty()
+    var limitedByDaysOrDoses: String = base?.limitedByDaysOrDoses.orEmpty()
+    var limitByDays: String = base?.limitByDays.orEmpty()
+    var limitByDoses: String = base?.limitByDoses.orEmpty()
+    var schedules: String = base?.schedules.orEmpty()
+    var noSchedules: String = base?.noSchedules.orEmpty()
+    var selectedCount: String = base?.selectedCount.orEmpty()
+    var deleteSelected: String = base?.deleteSelected.orEmpty()
+    var confirmDeleteSelectedTitle: String = base?.confirmDeleteSelectedTitle.orEmpty()
+    var confirmDeleteSelectedBody: String = base?.confirmDeleteSelectedBody.orEmpty()
+    var statusPending: String = base?.statusPending.orEmpty()
+    var statusConfirmed: String = base?.statusConfirmed.orEmpty()
+    var statusMissed: String = base?.statusMissed.orEmpty()
+    var statusSnoozed: String = base?.statusSnoozed.orEmpty()
+    var groupTogetherTitle: String = base?.groupTogetherTitle.orEmpty()
+    var groupTogetherBody: String = base?.groupTogetherBody.orEmpty()
+    var groupTogetherConfirm: String = base?.groupTogetherConfirm.orEmpty()
+    var groupTogetherDecline: String = base?.groupTogetherDecline.orEmpty()
+    var pickUnifiedTime: String = base?.pickUnifiedTime.orEmpty()
+    var group: String = base?.group.orEmpty()
+    var plan: String = base?.plan.orEmpty()
+    var asNeeded: String = base?.asNeeded.orEmpty()
+    var planSchedule: String = base?.planSchedule.orEmpty()
+    var addTime: String = base?.addTime.orEmpty()
+    var everySelectedPeriodIntake: String = base?.everySelectedPeriodIntake.orEmpty()
+    var onSelectedDaysAt: String = base?.onSelectedDaysAt.orEmpty()
+    var remindTogether: String = base?.remindTogether.orEmpty()
+    var daily: String = base?.daily.orEmpty()
+    var ungroup: String = base?.ungroup.orEmpty()
+    var addToGroup: String = base?.addToGroup.orEmpty()
+    var planFirst: String = base?.planFirst.orEmpty()
+    var scheduleRequired: String = base?.scheduleRequired.orEmpty()
+    var moreSchedules: String = base?.moreSchedules.orEmpty()
+    var planType: String = base?.planType.orEmpty()
+    var planRecurring: String = base?.planRecurring.orEmpty()
+    var planOneShot: String = base?.planOneShot.orEmpty()
+    var planPrn: String = base?.planPrn.orEmpty()
+    var oneShotDate: String = base?.oneShotDate.orEmpty()
+    var oneShotTime: String = base?.oneShotTime.orEmpty()
+    var prnNoScheduleHint: String = base?.prnNoScheduleHint.orEmpty()
+    var previousMonth: String = base?.previousMonth.orEmpty()
+    var nextMonth: String = base?.nextMonth.orEmpty()
+    var previousYear: String = base?.previousYear.orEmpty()
+    var nextYear: String = base?.nextYear.orEmpty()
+    var pickMonthYear: String = base?.pickMonthYear.orEmpty()
+    var filterMedication: String = base?.filterMedication.orEmpty()
+    var filterStatus: String = base?.filterStatus.orEmpty()
+    var filterAll: String = base?.filterAll.orEmpty()
+    var onlyEditedLate: String = base?.onlyEditedLate.orEmpty()
+    var editedLateBadge: String = base?.editedLateBadge.orEmpty()
+    var editIntake: String = base?.editIntake.orEmpty()
+    var intakeNote: String = base?.intakeNote.orEmpty()
+    var actualTime: String = base?.actualTime.orEmpty()
+    var useNow: String = base?.useNow.orEmpty()
+    var saveEdit: String = base?.saveEdit.orEmpty()
+    var missedSection: String = base?.missedSection.orEmpty()
+    var lateTake: String = base?.lateTake.orEmpty()
+    var prnSection: String = base?.prnSection.orEmpty()
+    var takeNow: String = base?.takeNow.orEmpty()
+    var takenJustNow: String = base?.takenJustNow.orEmpty()
+    var takenAtSpecificTime: String = base?.takenAtSpecificTime.orEmpty()
+    var prnIntakeTitle: String = base?.prnIntakeTitle.orEmpty()
+    var profileDisclaimer: String = base?.profileDisclaimer.orEmpty()
+    var add: String = base?.add.orEmpty()
+    var done: String = base?.done.orEmpty()
+    var sectionPersonal: String = base?.sectionPersonal.orEmpty()
+    var sectionGeneralDetails: String = base?.sectionGeneralDetails.orEmpty()
+    var fullName: String = base?.fullName.orEmpty()
+    var address: String = base?.address.orEmpty()
+    var postalCode: String = base?.postalCode.orEmpty()
+    var city: String = base?.city.orEmpty()
+    var phone: String = base?.phone.orEmpty()
+    var email: String = base?.email.orEmpty()
+    var pharmacyAddress: String = base?.pharmacyAddress.orEmpty()
+    var pharmacyPhone: String = base?.pharmacyPhone.orEmpty()
+    var pregnant: String = base?.pregnant.orEmpty()
+    var smoking: String = base?.smoking.orEmpty()
+    var cigarettesPerDay: String = base?.cigarettesPerDay.orEmpty()
+    var additionalInsurance: String = base?.additionalInsurance.orEmpty()
+    var careInsurance: String = base?.careInsurance.orEmpty()
+    var personalSaved: String = base?.personalSaved.orEmpty()
+    var generalSaved: String = base?.generalSaved.orEmpty()
+    var healthSaved: String = base?.healthSaved.orEmpty()
+    var insuranceSaved: String = base?.insuranceSaved.orEmpty()
+    var profileSectionSaved: String = base?.profileSectionSaved.orEmpty()
+    var documentImported: String = base?.documentImported.orEmpty()
+    var documentOpenFailed: String = base?.documentOpenFailed.orEmpty()
+    var saveProfile: String = base?.saveProfile.orEmpty()
+    var clearProfile: String = base?.clearProfile.orEmpty()
+    var clearProfileConfirm: String = base?.clearProfileConfirm.orEmpty()
+    var sectionGeneral: String = base?.sectionGeneral.orEmpty()
+    var sectionAllergies: String = base?.sectionAllergies.orEmpty()
+    var sectionHealth: String = base?.sectionHealth.orEmpty()
+    var sectionInsurance: String = base?.sectionInsurance.orEmpty()
+    var sectionEmergency: String = base?.sectionEmergency.orEmpty()
+    var sectionContacts: String = base?.sectionContacts.orEmpty()
+    var sectionDocuments: String = base?.sectionDocuments.orEmpty()
+    var bloodType: String = base?.bloodType.orEmpty()
+    var heightCm: String = base?.heightCm.orEmpty()
+    var weightKg: String = base?.weightKg.orEmpty()
+    var bmi: String = base?.bmi.orEmpty()
+    var aidsNotes: String = base?.aidsNotes.orEmpty()
+    var organDonor: String = base?.organDonor.orEmpty()
+    var preferredPharmacy: String = base?.preferredPharmacy.orEmpty()
+    var otherNotes: String = base?.otherNotes.orEmpty()
+    var allergyName: String = base?.allergyName.orEmpty()
+    var allergySeverity: String = base?.allergySeverity.orEmpty()
+    var addAllergy: String = base?.addAllergy.orEmpty()
+    var chronicConditions: String = base?.chronicConditions.orEmpty()
+    var implantsNotes: String = base?.implantsNotes.orEmpty()
+    var pregnancyNotes: String = base?.pregnancyNotes.orEmpty()
+    var smokingAlcoholNotes: String = base?.smokingAlcoholNotes.orEmpty()
+    var vaccinationNotes: String = base?.vaccinationNotes.orEmpty()
+    var lastCheckupNotes: String = base?.lastCheckupNotes.orEmpty()
+    var lastBloodPressure: String = base?.lastBloodPressure.orEmpty()
+    var lastBloodSugar: String = base?.lastBloodSugar.orEmpty()
+    var insuranceName: String = base?.insuranceName.orEmpty()
+    var insuranceNumber: String = base?.insuranceNumber.orEmpty()
+    var emergencyNotes: String = base?.emergencyNotes.orEmpty()
+    var contactName: String = base?.contactName.orEmpty()
+    var contactCategory: String = base?.contactCategory.orEmpty()
+    var contactSpecialty: String = base?.contactSpecialty.orEmpty()
+    var contactPhone: String = base?.contactPhone.orEmpty()
+    var contactEmail: String = base?.contactEmail.orEmpty()
+    var contactAddress: String = base?.contactAddress.orEmpty()
+    var contactEmergency: String = base?.contactEmergency.orEmpty()
+    var addContact: String = base?.addContact.orEmpty()
+    var categoryDoctor: String = base?.categoryDoctor.orEmpty()
+    var categoryPharmacy: String = base?.categoryPharmacy.orEmpty()
+    var categoryEmergency: String = base?.categoryEmergency.orEmpty()
+    var categoryFamily: String = base?.categoryFamily.orEmpty()
+    var categoryOther: String = base?.categoryOther.orEmpty()
+    var documentTitle: String = base?.documentTitle.orEmpty()
+    var documentCategory: String = base?.documentCategory.orEmpty()
+    var documentDate: String = base?.documentDate.orEmpty()
+    var addDocument: String = base?.addDocument.orEmpty()
+    var openDocument: String = base?.openDocument.orEmpty()
+    var deleteDocument: String = base?.deleteDocument.orEmpty()
+    var noDocuments: String = base?.noDocuments.orEmpty()
+    var noContacts: String = base?.noContacts.orEmpty()
+    var noAllergies: String = base?.noAllergies.orEmpty()
+    var docCategoryLab: String = base?.docCategoryLab.orEmpty()
+    var docCategoryLetter: String = base?.docCategoryLetter.orEmpty()
+    var docCategoryImaging: String = base?.docCategoryImaging.orEmpty()
+    var docCategoryOther: String = base?.docCategoryOther.orEmpty()
+    var deleteDataSection: String = base?.deleteDataSection.orEmpty()
+    var allData: String = base?.allData.orEmpty()
+    var profileData: String = base?.profileData.orEmpty()
+    var medicationData: String = base?.medicationData.orEmpty()
+    var deleteSelectedData: String = base?.deleteSelectedData.orEmpty()
+    var deleteDataConfirm: String = base?.deleteDataConfirm.orEmpty()
+    var backupPdf: String = base?.backupPdf.orEmpty()
+    var regularBackupQuestion: String = base?.regularBackupQuestion.orEmpty()
+    var backupFrequency: String = base?.backupFrequency.orEmpty()
+    var weeklySunday: String = base?.weeklySunday.orEmpty()
+    var monthlyLastDay: String = base?.monthlyLastDay.orEmpty()
+    var quarterlyEnd: String = base?.quarterlyEnd.orEmpty()
+    var semiannualEnd: String = base?.semiannualEnd.orEmpty()
+    var manualPdfExport: String = base?.manualPdfExport.orEmpty()
+    var fromDate: String = base?.fromDate.orEmpty()
+    var toDate: String = base?.toDate.orEmpty()
+    var allMedications: String = base?.allMedications.orEmpty()
+    var selectMedications: String = base?.selectMedications.orEmpty()
+    var generatePdf: String = base?.generatePdf.orEmpty()
+    var pdfCreated: String = base?.pdfCreated.orEmpty()
+    var invalidDateRange: String = base?.invalidDateRange.orEmpty()
+    var dataDeleted: String = base?.dataDeleted.orEmpty()
+    var yes: String = base?.yes.orEmpty()
+    var no: String = base?.no.orEmpty()
+    var notSet: String = base?.notSet.orEmpty()
+}
 
-val EnglishStrings = AppStrings(
-    appName = "MediGuard",
-    home = "Home",
-    medications = "Medications",
-    history = "History",
-    settings = "Settings",
-    more = "More",
-    profile = "Profile",
-    addMedication = "Add medication",
-    editMedication = "Edit medication",
-    noReminders = "No reminders yet",
-    noRemindersBody = "Add first reminder",
-    createMedicationNow = "Create medication now",
-    medicationName = "Medication name",
-    dosage = "Dosage",
-    unit = "Unit",
-    notes = "Notes",
-    durationDays = "Duration (days)",
-    treatmentLimitDoses = "Total doses (pieces)",
-    tabletsLeft = "Tablets left",
-    remainingVolume = "Volume left",
-    dosePerIntake = "Dose per intake (ml)",
-    doseQuantity = "Amount per intake",
-    medicationForm = "Medication form",
-    treatment = "Treatment",
-    ongoing = "Ongoing",
-    limited = "Limited",
-    supplyAlert = "Supply alert",
-    alertAt = "Alert at",
-    reminderType = "Reminder type",
-    save = "Save reminder",
-    update = "Update reminder",
-    delete = "Delete",
-    edit = "Edit",
-    view = "View",
-    details = "Details",
-    close = "Close",
-    remove = "Remove",
-    cancel = "Cancel",
-    confirmDeleteTitle = "Delete medication?",
-    confirmDeleteBody = "This removes the medication, its reminders and related history.",
-    lowSupplyTitle = "Low supply",
-    lowSupplyBody = "needs refill soon",
-    restock = "Restock",
-    newStock = "Amount to add",
-    saveStock = "Save stock",
-    noHistory = "No intake history yet",
-    adherence = "Adherence",
-    takenNow = "Taken now",
-    dueNow = "Due now",
-    nextIntakes = "Next",
-    noDueMedication = "No medication is due right now.",
-    markGroupTaken = "Mark as taken",
-    scheduled = "Scheduled",
-    taken = "Taken",
-    status = "Status",
-    theme = "Theme",
-    language = "Language",
-    light = "Light",
-    dark = "Dark",
-    system = "System",
-    english = "English",
-    german = "German",
-    alarmSound = "Alarm sound",
-    alertMode = "Reminder mode",
-    alertModeAlarm = "Alarm",
-    alertModeSilentNotification = "Silent notification",
-    alertModeSoundNotification = "Notification + sound",
-    selectedSound = "Selected sound",
-    chooseSound = "Choose sound",
-    defaultSound = "System default",
-    exactAlarmPermission = "Exact alarms",
-    exactAlarmPermissionBody = "Android may require exact-alarm access for punctual reminders.",
-    allowExactAlarms = "Allow exact alarms",
-    notificationMedicationReminder = "Time for your medication!",
-    notificationMedicationGroupReminder = "Medication reminders",
-    notificationUnlockDetails = "Unlock your device to see details.",
-    notificationPleaseTake = "Please take",
-    notificationMultipleIntro = "Please take these medications now:",
-    snooze = "Snooze",
-    changeTimeOnce = "Change time",
-    stopAlarm = "Stop alarm",
-    exactTime = "Daily",
-    timeRange = "Time range",
-    dayPeriod = "Time of day",
-    interval = "Interval",
-    weekly = "Weekdays",
-    timesExample = "Times, e.g. 08:00, 20:00",
-    from = "From",
-    to = "To",
-    intervalHours = "Interval in hours",
-    startTime = "Start time",
-    calculatedEndDate = "End date (from stock)",
-    weeklyTime = "Weekly time",
-    approximatePeriods = "Approximate periods",
-    dayPeriodSettings = "Time-of-day ranges",
-    dayPeriodSettingsHint = "Define when morning, noon, afternoon, evening and night apply. All 24 hours must be covered.",
-    dayPeriodGapError = "Gaps in coverage:",
-    invalidTime = "Enter valid times in HH:mm format.",
-    validationHint = "Enter medication, dosage and a valid reminder time.",
-    stock = "Stock",
-    durationOngoingHint = "No end date is needed for ongoing medication.",
-    limitedByDaysOrDoses = "Choose one limit: duration or total dose count.",
-    limitByDays = "Duration",
-    limitByDoses = "Total doses",
-    schedules = "Schedules",
-    noSchedules = "No schedules",
-    selectedCount = "selected",
-    deleteSelected = "Delete selected",
-    confirmDeleteSelectedTitle = "Delete selected medications?",
-    confirmDeleteSelectedBody = "This removes the selected medications, their reminders and related history.",
-    statusPending = "Pending",
-    statusConfirmed = "Confirmed",
-    statusMissed = "Missed",
-    statusSnoozed = "Snoozed",
-    groupTogetherTitle = "Take together?",
-    groupTogetherBody = "These medications are scheduled close together. Group their reminders?",
-    groupTogetherConfirm = "Yes, group",
-    groupTogetherDecline = "No, keep separate",
-    pickUnifiedTime = "Shared intake time",
-    group = "Group",
-    plan = "Plan",
-    asNeeded = "As needed",
-    planSchedule = "Plan reminders",
-    addTime = "Add time",
-    everySelectedPeriodIntake = "Each selected time of day = one intake.",
-    onSelectedDaysAt = "On these days at",
-    remindTogether = "Remind together",
-    daily = "Daily",
-    ungroup = "Ungroup",
-    addToGroup = "Add to group",
-    planFirst = "Plan reminders first",
-    scheduleRequired = "Choose at least one valid schedule.",
-    moreSchedules = "more",
-    planType = "Plan type",
-    planRecurring = "Recurring",
-    planOneShot = "One-time",
-    planPrn = "As needed",
-    oneShotDate = "Date",
-    oneShotTime = "Time",
-    prnNoScheduleHint = "As-needed medications have no fixed schedule.",
-    previousMonth = "Previous month",
-    nextMonth = "Next month",
-    previousYear = "Previous year",
-    nextYear = "Next year",
-    pickMonthYear = "Jump to month",
-    filterMedication = "Medication",
-    filterStatus = "Status",
-    filterAll = "All",
-    onlyEditedLate = "Only late edits",
-    editedLateBadge = "Edited late",
-    editIntake = "Edit intake",
-    intakeNote = "Note",
-    actualTime = "Actual time",
-    useNow = "Use now",
-    saveEdit = "Save changes",
-    missedSection = "Missed / overdue",
-    lateTake = "Took late",
-    prnSection = "As needed",
-    takeNow = "Take now",
-    profileDisclaimer = "This profile is for personal notes only. It is not a medical record and not a medical device.",
-    add = "Add",
-    done = "Done",
-    sectionPersonal = "Personal details",
-    sectionGeneralDetails = "General information",
-    fullName = "Full name",
-    address = "Address",
-    postalCode = "Postal code",
-    city = "City",
-    phone = "Phone",
-    email = "Email",
-    pharmacyAddress = "Pharmacy address",
-    pharmacyPhone = "Pharmacy phone",
-    pregnant = "Pregnant",
-    smoking = "Smoking",
-    cigarettesPerDay = "Cigarettes per day",
-    additionalInsurance = "Additional insurance",
-    careInsurance = "Long-term care insurance",
-    personalSaved = "Personal details were saved.",
-    generalSaved = "General information was saved.",
-    healthSaved = "Health information was saved.",
-    insuranceSaved = "Insurance information was saved.",
-    profileSectionSaved = "Profile section was saved.",
-    documentImported = "Document imported.",
-    documentOpenFailed = "The PDF could not be opened.",
-    saveProfile = "Save profile",
-    clearProfile = "Clear profile",
-    clearProfileConfirm = "Delete all profile data, contacts, allergies and documents?",
-    sectionGeneral = "General",
-    sectionAllergies = "Allergies",
-    sectionHealth = "Health",
-    sectionInsurance = "Insurance",
-    sectionEmergency = "Emergency",
-    sectionContacts = "Contacts",
-    sectionDocuments = "Documents",
-    bloodType = "Blood type",
-    heightCm = "Height (cm)",
-    weightKg = "Weight (kg)",
-    bmi = "BMI",
-    aidsNotes = "Aids (glasses, hearing aid, …)",
-    organDonor = "Organ donor card",
-    preferredPharmacy = "Preferred pharmacy",
-    otherNotes = "Other notes",
-    allergyName = "Allergy / intolerance",
-    allergySeverity = "Severity",
-    addAllergy = "Add allergy",
-    chronicConditions = "Chronic conditions",
-    implantsNotes = "Implants / prostheses",
-    pregnancyNotes = "Pregnancy / breastfeeding",
-    smokingAlcoholNotes = "Smoking / alcohol",
-    vaccinationNotes = "Vaccination notes",
-    lastCheckupNotes = "Last checkup",
-    lastBloodPressure = "Last blood pressure",
-    lastBloodSugar = "Last blood sugar",
-    insuranceName = "Insurance name",
-    insuranceNumber = "Insurance number",
-    emergencyNotes = "Emergency notes",
-    contactName = "Name",
-    contactCategory = "Category",
-    contactSpecialty = "Specialty",
-    contactPhone = "Phone",
-    contactEmail = "Email",
-    contactAddress = "Address",
-    contactEmergency = "Emergency contact",
-    addContact = "Add contact",
-    categoryDoctor = "Doctor",
-    categoryPharmacy = "Pharmacy",
-    categoryEmergency = "Emergency",
-    categoryFamily = "Family",
-    categoryOther = "Other",
-    documentTitle = "Title",
-    documentCategory = "Category",
-    documentDate = "Document date",
-    addDocument = "Add PDF",
-    openDocument = "Open",
-    deleteDocument = "Delete document",
-    noDocuments = "No documents yet",
-    noContacts = "No contacts yet",
-    noAllergies = "No allergies listed",
-    docCategoryLab = "Lab",
-    docCategoryLetter = "Doctor letter",
-    docCategoryImaging = "Imaging",
-    docCategoryOther = "Other",
-    deleteDataSection = "Delete data",
-    allData = "All data",
-    profileData = "Profile data",
-    medicationData = "Medications",
-    deleteSelectedData = "Delete selected data",
-    deleteDataConfirm = "Permanently delete the selected data? This cannot be undone.",
-    backupPdf = "Backup / PDF",
-    regularBackupQuestion = "Save data regularly?",
-    backupFrequency = "Frequency",
-    weeklySunday = "Weekly (Sunday)",
-    monthlyLastDay = "Monthly (last day)",
-    quarterlyEnd = "Every 3 months (quarter end)",
-    semiannualEnd = "Every 6 months (30 Jun, 31 Dec)",
-    manualPdfExport = "Manual PDF export",
-    fromDate = "From date (dd/MM/yyyy)",
-    toDate = "To date (dd/MM/yyyy)",
-    allMedications = "All medications",
-    selectMedications = "Select medications",
-    generatePdf = "Generate PDF",
-    pdfCreated = "PDF created and added to Profile > Documents.",
-    invalidDateRange = "Enter a valid date range in dd/MM/yyyy format.",
-    dataDeleted = "Selected data was deleted.",
-    yes = "Yes",
-    no = "No",
+val EnglishStrings = AppStrings().apply {
+    appName = "MediGuard"
+    home = "Home"
+    medications = "Medications"
+    history = "History"
+    settings = "Settings"
+    more = "More"
+    profile = "Profile"
+    addMedication = "Add medication"
+    editMedication = "Edit medication"
+    noReminders = "No reminders yet"
+    noRemindersBody = "Add first reminder"
+    createMedicationNow = "Create medication now"
+    medicationName = "Medication name"
+    dosage = "Dosage"
+    unit = "Unit"
+    notes = "Notes"
+    durationDays = "Duration (days)"
+    treatmentLimitDoses = "Total doses (pieces)"
+    tabletsLeft = "Tablets left"
+    remainingVolume = "Volume left"
+    dosePerIntake = "Dose per intake (ml)"
+    doseQuantity = "Amount per intake"
+    medicationForm = "Medication form"
+    treatment = "Treatment"
+    ongoing = "Ongoing"
+    limited = "Limited"
+    supplyAlert = "Supply alert"
+    alertAt = "Alert at"
+    reminderType = "Reminder type"
+    save = "Save reminder"
+    update = "Update reminder"
+    delete = "Delete"
+    edit = "Edit"
+    view = "View"
+    details = "Details"
+    close = "Close"
+    remove = "Remove"
+    cancel = "Cancel"
+    confirmDeleteTitle = "Delete medication?"
+    confirmDeleteBody = "This removes the medication, its reminders and related history."
+    lowSupplyTitle = "Low supply"
+    lowSupplyBody = "needs refill soon"
+    restock = "Restock"
+    newStock = "Amount to add"
+    saveStock = "Save stock"
+    noHistory = "No intake history yet"
+    adherence = "Adherence"
+    takenNow = "Taken now"
+    dueNow = "Due now"
+    nextIntakes = "Next"
+    noDueMedication = "No medication is due right now."
+    markGroupTaken = "Mark as taken"
+    scheduled = "Scheduled"
+    taken = "Taken"
+    status = "Status"
+    theme = "Theme"
+    language = "Language"
+    light = "Light"
+    dark = "Dark"
+    system = "System"
+    english = "English"
+    german = "German"
+    alarmSound = "Alarm sound"
+    alertMode = "Reminder mode"
+    alertModeAlarm = "Alarm"
+    alertModeSilentNotification = "Silent notification"
+    alertModeSoundNotification = "Notification + sound"
+    selectedSound = "Selected sound"
+    chooseSound = "Choose sound"
+    defaultSound = "System default"
+    exactAlarmPermission = "Exact alarms"
+    exactAlarmPermissionBody = "Android may require exact-alarm access for punctual reminders."
+    allowExactAlarms = "Allow exact alarms"
+    notificationMedicationReminder = "Time for your medication!"
+    notificationMedicationGroupReminder = "Medication reminders"
+    notificationUnlockDetails = "Unlock your device to see details."
+    notificationPleaseTake = "Please take"
+    notificationMultipleIntro = "Please take these medications now:"
+    snooze = "Snooze"
+    changeTimeOnce = "Change time"
+    stopAlarm = "Stop alarm"
+    exactTime = "Daily"
+    timeRange = "Time range"
+    dayPeriod = "Time of day"
+    interval = "Interval"
+    weekly = "Weekdays"
+    timesExample = "Times, e.g. 08:00, 20:00"
+    from = "From"
+    to = "To"
+    intervalHours = "Interval in hours"
+    startTime = "Start time"
+    calculatedEndDate = "End date (from stock)"
+    weeklyTime = "Weekly time"
+    approximatePeriods = "Approximate periods"
+    dayPeriodSettings = "Time-of-day ranges"
+    dayPeriodSettingsHint = "Define when morning, noon, afternoon, evening and night apply. All 24 hours must be covered."
+    dayPeriodGapError = "Gaps in coverage:"
+    invalidTime = "Enter valid times in HH:mm format."
+    validationHint = "Enter medication, dosage and a valid reminder time."
+    stock = "Stock"
+    durationOngoingHint = "No end date is needed for ongoing medication."
+    limitedByDaysOrDoses = "Choose one limit: duration or total dose count."
+    limitByDays = "Duration"
+    limitByDoses = "Total doses"
+    schedules = "Schedules"
+    noSchedules = "No schedules"
+    selectedCount = "selected"
+    deleteSelected = "Delete selected"
+    confirmDeleteSelectedTitle = "Delete selected medications?"
+    confirmDeleteSelectedBody = "This removes the selected medications, their reminders and related history."
+    statusPending = "Pending"
+    statusConfirmed = "Confirmed"
+    statusMissed = "Missed"
+    statusSnoozed = "Snoozed"
+    groupTogetherTitle = "Take together?"
+    groupTogetherBody = "These medications are scheduled close together. Group their reminders?"
+    groupTogetherConfirm = "Yes, group"
+    groupTogetherDecline = "No, keep separate"
+    pickUnifiedTime = "Shared intake time"
+    group = "Group"
+    plan = "Plan"
+    asNeeded = "As needed"
+    planSchedule = "Plan reminders"
+    addTime = "Add time"
+    everySelectedPeriodIntake = "Each selected time of day = one intake."
+    onSelectedDaysAt = "On these days at"
+    remindTogether = "Remind together"
+    daily = "Daily"
+    ungroup = "Ungroup"
+    addToGroup = "Add to group"
+    planFirst = "Plan reminders first"
+    scheduleRequired = "Choose at least one valid schedule."
+    moreSchedules = "more"
+    planType = "Plan type"
+    planRecurring = "Recurring"
+    planOneShot = "One-time"
+    planPrn = "As needed"
+    oneShotDate = "Date"
+    oneShotTime = "Time"
+    prnNoScheduleHint = "As-needed medications have no fixed schedule."
+    takenJustNow = "Taken just now"
+    takenAtSpecificTime = "Taken at a specific time"
+    prnIntakeTitle = "Record intake"
+    previousMonth = "Previous month"
+    nextMonth = "Next month"
+    previousYear = "Previous year"
+    nextYear = "Next year"
+    pickMonthYear = "Jump to month"
+    filterMedication = "Medication"
+    filterStatus = "Status"
+    filterAll = "All"
+    onlyEditedLate = "Only late edits"
+    editedLateBadge = "Edited late"
+    editIntake = "Edit intake"
+    intakeNote = "Note"
+    actualTime = "Actual time"
+    useNow = "Use now"
+    saveEdit = "Save changes"
+    missedSection = "Missed / overdue"
+    lateTake = "Took late"
+    prnSection = "As needed"
+    takeNow = "Take now"
+    profileDisclaimer = "This profile is for personal notes only. It is not a medical record and not a medical device."
+    add = "Add"
+    done = "Done"
+    sectionPersonal = "Personal details"
+    sectionGeneralDetails = "General information"
+    fullName = "Full name"
+    address = "Address"
+    postalCode = "Postal code"
+    city = "City"
+    phone = "Phone"
+    email = "Email"
+    pharmacyAddress = "Pharmacy address"
+    pharmacyPhone = "Pharmacy phone"
+    pregnant = "Pregnant"
+    smoking = "Smoking"
+    cigarettesPerDay = "Cigarettes per day"
+    additionalInsurance = "Additional insurance"
+    careInsurance = "Long-term care insurance"
+    personalSaved = "Personal details were saved."
+    generalSaved = "General information was saved."
+    healthSaved = "Health information was saved."
+    insuranceSaved = "Insurance information was saved."
+    profileSectionSaved = "Profile section was saved."
+    documentImported = "Document imported."
+    documentOpenFailed = "The PDF could not be opened."
+    saveProfile = "Save profile"
+    clearProfile = "Clear profile"
+    clearProfileConfirm = "Delete all profile data, contacts, allergies and documents?"
+    sectionGeneral = "General"
+    sectionAllergies = "Allergies"
+    sectionHealth = "Health"
+    sectionInsurance = "Insurance"
+    sectionEmergency = "Emergency"
+    sectionContacts = "Contacts"
+    sectionDocuments = "Documents"
+    bloodType = "Blood type"
+    heightCm = "Height (cm)"
+    weightKg = "Weight (kg)"
+    bmi = "BMI"
+    aidsNotes = "Aids (glasses, hearing aid, …)"
+    organDonor = "Organ donor card"
+    preferredPharmacy = "Preferred pharmacy"
+    otherNotes = "Other notes"
+    allergyName = "Allergy / intolerance"
+    allergySeverity = "Severity"
+    addAllergy = "Add allergy"
+    chronicConditions = "Chronic conditions"
+    implantsNotes = "Implants / prostheses"
+    pregnancyNotes = "Pregnancy / breastfeeding"
+    smokingAlcoholNotes = "Smoking / alcohol"
+    vaccinationNotes = "Vaccination notes"
+    lastCheckupNotes = "Last checkup"
+    lastBloodPressure = "Last blood pressure"
+    lastBloodSugar = "Last blood sugar"
+    insuranceName = "Insurance name"
+    insuranceNumber = "Insurance number"
+    emergencyNotes = "Emergency notes"
+    contactName = "Name"
+    contactCategory = "Category"
+    contactSpecialty = "Specialty"
+    contactPhone = "Phone"
+    contactEmail = "Email"
+    contactAddress = "Address"
+    contactEmergency = "Emergency contact"
+    addContact = "Add contact"
+    categoryDoctor = "Doctor"
+    categoryPharmacy = "Pharmacy"
+    categoryEmergency = "Emergency"
+    categoryFamily = "Family"
+    categoryOther = "Other"
+    documentTitle = "Title"
+    documentCategory = "Category"
+    documentDate = "Document date"
+    addDocument = "Add PDF"
+    openDocument = "Open"
+    deleteDocument = "Delete document"
+    noDocuments = "No documents yet"
+    noContacts = "No contacts yet"
+    noAllergies = "No allergies listed"
+    docCategoryLab = "Lab"
+    docCategoryLetter = "Doctor letter"
+    docCategoryImaging = "Imaging"
+    docCategoryOther = "Other"
+    deleteDataSection = "Delete data"
+    allData = "All data"
+    profileData = "Profile data"
+    medicationData = "Medications"
+    deleteSelectedData = "Delete selected data"
+    deleteDataConfirm = "Permanently delete the selected data? This cannot be undone."
+    backupPdf = "Backup / PDF"
+    regularBackupQuestion = "Save data regularly?"
+    backupFrequency = "Frequency"
+    weeklySunday = "Weekly (Sunday)"
+    monthlyLastDay = "Monthly (last day)"
+    quarterlyEnd = "Every 3 months (quarter end)"
+    semiannualEnd = "Every 6 months (30 Jun, 31 Dec)"
+    manualPdfExport = "Manual PDF export"
+    fromDate = "From date (dd/MM/yyyy)"
+    toDate = "To date (dd/MM/yyyy)"
+    allMedications = "All medications"
+    selectMedications = "Select medications"
+    generatePdf = "Generate PDF"
+    pdfCreated = "PDF created and added to Profile > Documents."
+    invalidDateRange = "Enter a valid date range in dd/MM/yyyy format."
+    dataDeleted = "Selected data was deleted."
+    yes = "Yes"
+    no = "No"
     notSet = "Not set"
-)
+}
 
-val GermanStrings = EnglishStrings.copy(
-    home = "Start",
-    medications = "Medizin",
-    history = "Verlauf",
-    settings = "Einstellungen",
-    more = "Mehr",
-    profile = "Profil",
-    addMedication = "Medikament hinzufügen",
-    editMedication = "Medikament bearbeiten",
-    noReminders = "Noch keine Erinnerungen",
-    noRemindersBody = "Erste Erinnerung hinzufügen",
-    createMedicationNow = "Jetzt Medikation erstellen",
-    medicationName = "Medikamentenname",
-    dosage = "Dosierung",
-    unit = "Einheit",
-    notes = "Notizen",
-    durationDays = "Dauer in Tagen",
-    treatmentLimitDoses = "Gesamtstückzahl",
-    tabletsLeft = "Tabletten übrig",
-    remainingVolume = "Menge übrig",
-    dosePerIntake = "Menge pro Einnahme (ml)",
-    doseQuantity = "Menge pro Einnahme",
-    medicationForm = "Darreichungsform",
-    treatment = "Behandlung",
-    ongoing = "Dauerhaft",
-    limited = "Begrenzt",
-    supplyAlert = "Nachschub-Hinweis",
-    alertAt = "Hinweis ab",
-    reminderType = "Erinnerungsart",
-    save = "Erinnerung speichern",
-    update = "Erinnerung aktualisieren",
-    delete = "Löschen",
-    edit = "Bearbeiten",
-    view = "Ansehen",
-    details = "Details",
-    close = "Schließen",
-    remove = "Entfernen",
-    cancel = "Abbrechen",
-    confirmDeleteTitle = "Medikament löschen?",
-    confirmDeleteBody = "Dadurch werden Medikament, Erinnerungen und zugehörige Verlaufseinträge entfernt.",
-    lowSupplyTitle = "Bald leer",
-    lowSupplyBody = "braucht bald Nachschub",
-    restock = "Nachschub",
-    newStock = "Neue Menge (wird addiert)",
-    saveStock = "Bestand speichern",
-    noHistory = "Noch kein Einnahmeverlauf",
-    adherence = "Einnahmetreue",
-    takenNow = "Jetzt eingenommen",
-    dueNow = "Jetzt fällig",
-    nextIntakes = "Nächste",
-    noDueMedication = "Aktuell ist kein Medikament fällig.",
-    markGroupTaken = "Als eingenommen markieren",
-    scheduled = "Geplant",
-    taken = "Eingenommen",
-    status = "Status",
-    theme = "Design",
-    language = "Sprache",
-    light = "Hell",
-    dark = "Dunkel",
-    system = "System",
-    english = "Englisch",
-    german = "Deutsch",
-    alarmSound = "Klingelton",
-    alertMode = "Erinnerungsart",
-    alertModeAlarm = "Alarm",
-    alertModeSilentNotification = "Stille Benachrichtigung",
-    alertModeSoundNotification = "Benachrichtigung + Ton",
-    selectedSound = "Ausgewählter Ton",
-    chooseSound = "Ton auswählen",
-    defaultSound = "Systemstandard",
-    exactAlarmPermission = "Pünktliche Alarme",
-    exactAlarmPermissionBody = "Android kann eine Berechtigung für exakte Alarme verlangen.",
-    allowExactAlarms = "Exakte Alarme erlauben",
-    notificationMedicationReminder = "Zeit für Ihre Medikamente!",
-    notificationMedicationGroupReminder = "Medikamentenerinnerungen",
-    notificationUnlockDetails = "Entsperren Sie Ihr Gerät, um Details zu sehen.",
-    notificationPleaseTake = "Bitte nehmen Sie jetzt",
-    notificationMultipleIntro = "Bitte nehmen Sie diese Medikamente jetzt ein:",
-    snooze = "Snooze",
-    changeTimeOnce = "Uhrzeit ändern",
-    stopAlarm = "Alarm stoppen",
-    exactTime = "Täglich",
-    timeRange = "Zeitfenster",
-    dayPeriod = "Tageszeit",
-    interval = "Intervall",
-    weekly = "Wochentage",
-    timesExample = "Zeiten, z. B. 08:00, 20:00",
-    from = "Von",
-    to = "Bis",
-    intervalHours = "Intervall in Stunden",
-    startTime = "Startzeit",
-    calculatedEndDate = "Enddatum (aus Bestand)",
-    weeklyTime = "Wöchentliche Zeit",
-    approximatePeriods = "Ungefähre Tageszeiten",
-    dayPeriodSettings = "Tageszeit-Bereiche",
-    dayPeriodSettingsHint = "Legen Sie fest, wann Morgens, Mittags, Nachmittags, Abends und Nachts gelten. Alle 24 Stunden müssen abgedeckt sein.",
-    dayPeriodGapError = "Lücken in der Abdeckung:",
-    invalidTime = "Geben Sie gültige Uhrzeiten im Format HH:mm ein.",
-    validationHint = "Geben Sie Medikament, Dosierung und eine gültige Erinnerungszeit ein.",
-    stock = "Bestand",
-    durationOngoingHint = "Für dauerhafte Medikamente ist kein Enddatum notwendig.",
-    limitedByDaysOrDoses = "Wählen eine Begrenzung: Dauer oder Gesamtstückzahl.",
-    limitByDays = "Dauer",
-    limitByDoses = "Gesamtstückzahl",
-    schedules = "Zeitpläne",
-    noSchedules = "Keine Zeitpläne",
-    selectedCount = "ausgewählt",
-    deleteSelected = "Auswahl löschen",
-    confirmDeleteSelectedTitle = "Ausgewählte Medikamente löschen?",
-    confirmDeleteSelectedBody = "Dadurch werden die ausgewählten Medikamente, Erinnerungen und zugehörige Verlaufseinträge entfernt.",
-    statusPending = "Ausstehend",
-    statusConfirmed = "Bestätigt",
-    statusMissed = "Verpasst",
-    statusSnoozed = "Verschoben",
-    groupTogetherTitle = "Gleichzeitig einnehmen?",
-    groupTogetherBody = "Diese Medikamente liegen zeitlich nah beieinander. Möchten Sie ihre Erinnerungen gemeinsam anzeigen?",
-    groupTogetherConfirm = "Ja, zusammenfassen",
-    groupTogetherDecline = "Nein, getrennt lassen",
-    pickUnifiedTime = "Gemeinsame Einnahmezeit",
-    group = "Gruppe",
-    plan = "Planen",
-    asNeeded = "Bedarf",
-    planSchedule = "Erinnerungen planen",
-    addTime = "Uhrzeit hinzufügen",
-    everySelectedPeriodIntake = "Jede gewählte Tageszeit = eine Einnahme.",
-    onSelectedDaysAt = "An diesen Tagen um",
-    remindTogether = "Gemeinsam erinnern",
-    daily = "Täglich",
-    ungroup = "Gruppe lösen",
-    addToGroup = "Zur Gruppe hinzufügen",
-    planFirst = "Zuerst planen",
-    scheduleRequired = "Wählen Sie mindestens einen gültigen Zeitplan.",
-    moreSchedules = "weitere",
-    planType = "Planart",
-    planRecurring = "Dauerhaft / Wiederkehrend",
-    planOneShot = "Einmalig",
-    planPrn = "Bedarf",
-    oneShotDate = "Datum",
-    oneShotTime = "Uhrzeit",
-    prnNoScheduleHint = "Bedarfsmedikamente haben keinen festen Zeitplan.",
-    previousMonth = "Vorheriger Monat",
-    nextMonth = "Nächster Monat",
-    previousYear = "Vorheriges Jahr",
-    nextYear = "Nächstes Jahr",
-    pickMonthYear = "Zum Monat springen",
-    filterMedication = "Medikament",
-    filterStatus = "Status",
-    filterAll = "Alle",
-    onlyEditedLate = "Nur nachträglich geändert",
-    editedLateBadge = "Nachträglich geändert",
-    editIntake = "Einnahme bearbeiten",
-    intakeNote = "Notiz",
-    actualTime = "Tatsächliche Uhrzeit",
-    useNow = "Jetzt verwenden",
-    saveEdit = "Änderungen speichern",
-    missedSection = "Verpasst / überfällig",
-    lateTake = "Nachträglich genommen",
-    prnSection = "Bei Bedarf",
-    takeNow = "Jetzt nehmen",
-    profileDisclaimer = "Dieses Profil dient nur persönlichen Notizen. Es ersetzt keine Arztakte und ist kein Medizinprodukt.",
-    add = "Hinzufügen",
-    done = "Fertig",
-    sectionPersonal = "Persönliche Daten",
-    sectionGeneralDetails = "Allgemeine Angaben",
-    fullName = "Vollständiger Name",
-    address = "Adresse",
-    postalCode = "Postleitzahl",
-    city = "Ort",
-    phone = "Telefon",
-    email = "E-Mail",
-    pharmacyAddress = "Adresse der Apotheke",
-    pharmacyPhone = "Telefon der Apotheke",
-    pregnant = "Schwanger",
-    smoking = "Rauchen",
-    cigarettesPerDay = "Zigaretten pro Tag",
-    additionalInsurance = "Zusatzversicherung",
-    careInsurance = "Pflegeversicherung",
-    personalSaved = "Persönliche Daten wurden gespeichert.",
-    generalSaved = "Allgemeine Angaben wurden gespeichert.",
-    healthSaved = "Gesundheitsangaben wurden gespeichert.",
-    insuranceSaved = "Versicherungsangaben wurden gespeichert.",
-    profileSectionSaved = "Profilabschnitt wurde gespeichert.",
-    documentImported = "Dokument wurde importiert.",
-    documentOpenFailed = "Die PDF-Datei konnte nicht geöffnet werden.",
-    saveProfile = "Profil speichern",
-    clearProfile = "Profil löschen",
-    clearProfileConfirm = "Alle Profildaten, Kontakte, Allergien und Dokumente löschen?",
-    sectionGeneral = "Allgemein",
-    sectionAllergies = "Allergien",
-    sectionHealth = "Gesundheit",
-    sectionInsurance = "Versicherung",
-    sectionEmergency = "Notfall",
-    sectionContacts = "Kontakte",
-    sectionDocuments = "Dokumente",
-    bloodType = "Blutgruppe",
-    heightCm = "Größe (cm)",
-    weightKg = "Gewicht (kg)",
-    bmi = "BMI",
-    aidsNotes = "Hilfsmittel (Sehhilfe, Hörgerät, …)",
-    organDonor = "Organspendeausweis",
-    preferredPharmacy = "Bevorzugte Apotheke",
-    otherNotes = "Sonstige Notizen",
-    allergyName = "Allergie / Unverträglichkeit",
-    allergySeverity = "Schweregrad",
-    addAllergy = "Allergie hinzufügen",
-    chronicConditions = "Chronische Erkrankungen",
-    implantsNotes = "Implantate / Prothesen",
-    pregnancyNotes = "Schwangerschaft / Stillzeit",
-    smokingAlcoholNotes = "Rauchen / Alkohol",
-    vaccinationNotes = "Impfstatus-Notiz",
-    lastCheckupNotes = "Letzte Vorsorge",
-    lastBloodPressure = "Letzter Blutdruck",
-    lastBloodSugar = "Letzter Blutzucker",
-    insuranceName = "Krankenkasse",
-    insuranceNumber = "Versichertennummer",
-    emergencyNotes = "Notfallhinweise",
-    contactName = "Name",
-    contactCategory = "Kategorie",
-    contactSpecialty = "Fachrichtung",
-    contactPhone = "Telefon",
-    contactEmail = "E-Mail",
-    contactAddress = "Adresse",
-    contactEmergency = "Notfallkontakt",
-    addContact = "Kontakt hinzufügen",
-    categoryDoctor = "Arzt",
-    categoryPharmacy = "Apotheke",
-    categoryEmergency = "Notfall",
-    categoryFamily = "Familie",
-    categoryOther = "Sonstiges",
-    documentTitle = "Titel",
-    documentCategory = "Kategorie",
-    documentDate = "Dokumentdatum",
-    addDocument = "PDF hinzufügen",
-    openDocument = "Öffnen",
-    deleteDocument = "Dokument löschen",
-    noDocuments = "Noch keine Dokumente",
-    noContacts = "Noch keine Kontakte",
-    noAllergies = "Keine Allergien eingetragen",
-    docCategoryLab = "Labor",
-    docCategoryLetter = "Arztbrief",
-    docCategoryImaging = "Bildgebung",
-    docCategoryOther = "Sonstiges",
-    deleteDataSection = "Daten löschen",
-    allData = "Alle Daten",
-    profileData = "Profildaten",
-    medicationData = "Medikationen",
-    deleteSelectedData = "Ausgewählte Daten löschen",
-    deleteDataConfirm = "Ausgewählte Daten endgültig löschen? Dies kann nicht rückgängig gemacht werden.",
-    backupPdf = "Backup / PDF",
-    regularBackupQuestion = "Daten regelmäßig speichern?",
-    backupFrequency = "Häufigkeit",
-    weeklySunday = "Wöchentlich (Sonntag)",
-    monthlyLastDay = "Monatlich (letzter Tag)",
-    quarterlyEnd = "Alle 3 Monate (Quartalsende)",
-    semiannualEnd = "Alle 6 Monate (30.6., 31.12.)",
-    manualPdfExport = "Manueller PDF-Export",
-    fromDate = "Von-Datum (dd/MM/yyyy)",
-    toDate = "Bis-Datum (dd/MM/yyyy)",
-    allMedications = "Alle Medikationen",
-    selectMedications = "Medikationen auswählen",
-    generatePdf = "PDF erstellen",
-    pdfCreated = "PDF erstellt und unter Profil > Dokumente hinzugefügt.",
-    invalidDateRange = "Geben Sie einen gültigen Zeitraum im Format dd/MM/yyyy ein.",
-    dataDeleted = "Ausgewählte Daten wurden gelöscht.",
-    yes = "Ja",
-    no = "Nein",
+val GermanStrings = AppStrings(EnglishStrings).apply {
+    home = "Start"
+    medications = "Medizin"
+    history = "Verlauf"
+    settings = "Einstellungen"
+    more = "Mehr"
+    profile = "Profil"
+    addMedication = "Medikament hinzufügen"
+    editMedication = "Medikament bearbeiten"
+    noReminders = "Noch keine Erinnerungen"
+    noRemindersBody = "Erste Erinnerung hinzufügen"
+    createMedicationNow = "Jetzt Medikation erstellen"
+    medicationName = "Medikamentenname"
+    dosage = "Dosierung"
+    unit = "Einheit"
+    notes = "Notizen"
+    durationDays = "Dauer in Tagen"
+    treatmentLimitDoses = "Gesamtstückzahl"
+    tabletsLeft = "Tabletten übrig"
+    remainingVolume = "Menge übrig"
+    dosePerIntake = "Menge pro Einnahme (ml)"
+    doseQuantity = "Menge pro Einnahme"
+    medicationForm = "Darreichungsform"
+    treatment = "Behandlung"
+    ongoing = "Dauerhaft"
+    limited = "Begrenzt"
+    supplyAlert = "Nachschub-Hinweis"
+    alertAt = "Hinweis ab"
+    reminderType = "Erinnerungsart"
+    save = "Erinnerung speichern"
+    update = "Erinnerung aktualisieren"
+    delete = "Löschen"
+    edit = "Bearbeiten"
+    view = "Ansehen"
+    details = "Details"
+    close = "Schließen"
+    remove = "Entfernen"
+    cancel = "Abbrechen"
+    confirmDeleteTitle = "Medikament löschen?"
+    confirmDeleteBody = "Dadurch werden Medikament, Erinnerungen und zugehörige Verlaufseinträge entfernt."
+    lowSupplyTitle = "Bald leer"
+    lowSupplyBody = "braucht bald Nachschub"
+    restock = "Nachschub"
+    newStock = "Neue Menge (wird addiert)"
+    saveStock = "Bestand speichern"
+    noHistory = "Noch kein Einnahmeverlauf"
+    adherence = "Einnahmetreue"
+    takenNow = "Jetzt eingenommen"
+    dueNow = "Jetzt fällig"
+    nextIntakes = "Nächste"
+    noDueMedication = "Aktuell ist kein Medikament fällig."
+    markGroupTaken = "Als eingenommen markieren"
+    scheduled = "Geplant"
+    taken = "Eingenommen"
+    status = "Status"
+    theme = "Design"
+    language = "Sprache"
+    light = "Hell"
+    dark = "Dunkel"
+    system = "System"
+    english = "Englisch"
+    german = "Deutsch"
+    alarmSound = "Klingelton"
+    alertMode = "Erinnerungsart"
+    alertModeAlarm = "Alarm"
+    alertModeSilentNotification = "Stille Benachrichtigung"
+    alertModeSoundNotification = "Benachrichtigung + Ton"
+    selectedSound = "Ausgewählter Ton"
+    chooseSound = "Ton auswählen"
+    defaultSound = "Systemstandard"
+    exactAlarmPermission = "Pünktliche Alarme"
+    exactAlarmPermissionBody = "Android kann eine Berechtigung für exakte Alarme verlangen."
+    allowExactAlarms = "Exakte Alarme erlauben"
+    notificationMedicationReminder = "Zeit für Ihre Medikamente!"
+    notificationMedicationGroupReminder = "Medikamentenerinnerungen"
+    notificationUnlockDetails = "Entsperren Sie Ihr Gerät, um Details zu sehen."
+    notificationPleaseTake = "Bitte nehmen Sie jetzt"
+    notificationMultipleIntro = "Bitte nehmen Sie diese Medikamente jetzt ein:"
+    snooze = "Snooze"
+    changeTimeOnce = "Uhrzeit ändern"
+    stopAlarm = "Alarm stoppen"
+    exactTime = "Täglich"
+    timeRange = "Zeitfenster"
+    dayPeriod = "Tageszeit"
+    interval = "Intervall"
+    weekly = "Wochentage"
+    timesExample = "Zeiten, z. B. 08:00, 20:00"
+    from = "Von"
+    to = "Bis"
+    intervalHours = "Intervall in Stunden"
+    startTime = "Startzeit"
+    calculatedEndDate = "Enddatum (aus Bestand)"
+    weeklyTime = "Wöchentliche Zeit"
+    approximatePeriods = "Ungefähre Tageszeiten"
+    dayPeriodSettings = "Tageszeit-Bereiche"
+    dayPeriodSettingsHint = "Legen Sie fest, wann Morgens, Mittags, Nachmittags, Abends und Nachts gelten. Alle 24 Stunden müssen abgedeckt sein."
+    dayPeriodGapError = "Lücken in der Abdeckung:"
+    invalidTime = "Geben Sie gültige Uhrzeiten im Format HH:mm ein."
+    validationHint = "Geben Sie Medikament, Dosierung und eine gültige Erinnerungszeit ein."
+    stock = "Bestand"
+    durationOngoingHint = "Für dauerhafte Medikamente ist kein Enddatum notwendig."
+    limitedByDaysOrDoses = "Wählen eine Begrenzung: Dauer oder Gesamtstückzahl."
+    limitByDays = "Dauer"
+    limitByDoses = "Gesamtstückzahl"
+    schedules = "Zeitpläne"
+    noSchedules = "Keine Zeitpläne"
+    selectedCount = "ausgewählt"
+    deleteSelected = "Auswahl löschen"
+    confirmDeleteSelectedTitle = "Ausgewählte Medikamente löschen?"
+    confirmDeleteSelectedBody = "Dadurch werden die ausgewählten Medikamente, Erinnerungen und zugehörige Verlaufseinträge entfernt."
+    statusPending = "Ausstehend"
+    statusConfirmed = "Bestätigt"
+    statusMissed = "Verpasst"
+    statusSnoozed = "Verschoben"
+    groupTogetherTitle = "Gleichzeitig einnehmen?"
+    groupTogetherBody = "Diese Medikamente liegen zeitlich nah beieinander. Möchten Sie ihre Erinnerungen gemeinsam anzeigen?"
+    groupTogetherConfirm = "Ja, zusammenfassen"
+    groupTogetherDecline = "Nein, getrennt lassen"
+    pickUnifiedTime = "Gemeinsame Einnahmezeit"
+    group = "Gruppe"
+    plan = "Planen"
+    asNeeded = "Bei Bedarf"
+    planSchedule = "Erinnerungen planen"
+    addTime = "Uhrzeit hinzufügen"
+    everySelectedPeriodIntake = "Jede gewählte Tageszeit = eine Einnahme."
+    onSelectedDaysAt = "An diesen Tagen um"
+    remindTogether = "Gemeinsam erinnern"
+    daily = "Täglich"
+    ungroup = "Gruppe lösen"
+    addToGroup = "Zur Gruppe hinzufügen"
+    planFirst = "Zuerst planen"
+    scheduleRequired = "Wählen Sie mindestens einen gültigen Zeitplan."
+    moreSchedules = "weitere"
+    planType = "Planart"
+    planRecurring = "Dauerhaft / Wiederkehrend"
+    planOneShot = "Einmalig"
+    planPrn = "Bei Bedarf"
+    oneShotDate = "Datum"
+    oneShotTime = "Uhrzeit"
+    prnNoScheduleHint = "Bedarfsmedikamente haben keinen festen Zeitplan."
+    takenJustNow = "Gerade eben eingenommen"
+    takenAtSpecificTime = "Zu einer bestimmten Uhrzeit eingenommen"
+    prnIntakeTitle = "Einnahme erfassen"
+    previousMonth = "Vorheriger Monat"
+    nextMonth = "Nächster Monat"
+    previousYear = "Vorheriges Jahr"
+    nextYear = "Nächstes Jahr"
+    pickMonthYear = "Zum Monat springen"
+    filterMedication = "Medikament"
+    filterStatus = "Status"
+    filterAll = "Alle"
+    onlyEditedLate = "Nur nachträglich geändert"
+    editedLateBadge = "Nachträglich geändert"
+    editIntake = "Einnahme bearbeiten"
+    intakeNote = "Notiz"
+    actualTime = "Tatsächliche Uhrzeit"
+    useNow = "Jetzt verwenden"
+    saveEdit = "Änderungen speichern"
+    missedSection = "Verpasst / überfällig"
+    lateTake = "Nachträglich genommen"
+    prnSection = "Bei Bedarf"
+    takeNow = "Jetzt nehmen"
+    profileDisclaimer = "Dieses Profil dient nur persönlichen Notizen. Es ersetzt keine Arztakte und ist kein Medizinprodukt."
+    add = "Hinzufügen"
+    done = "Fertig"
+    sectionPersonal = "Persönliche Daten"
+    sectionGeneralDetails = "Allgemeine Angaben"
+    fullName = "Vollständiger Name"
+    address = "Adresse"
+    postalCode = "Postleitzahl"
+    city = "Ort"
+    phone = "Telefon"
+    email = "E-Mail"
+    pharmacyAddress = "Adresse der Apotheke"
+    pharmacyPhone = "Telefon der Apotheke"
+    pregnant = "Schwanger"
+    smoking = "Rauchen"
+    cigarettesPerDay = "Zigaretten pro Tag"
+    additionalInsurance = "Zusatzversicherung"
+    careInsurance = "Pflegeversicherung"
+    personalSaved = "Persönliche Daten wurden gespeichert."
+    generalSaved = "Allgemeine Angaben wurden gespeichert."
+    healthSaved = "Gesundheitsangaben wurden gespeichert."
+    insuranceSaved = "Versicherungsangaben wurden gespeichert."
+    profileSectionSaved = "Profilabschnitt wurde gespeichert."
+    documentImported = "Dokument wurde importiert."
+    documentOpenFailed = "Die PDF-Datei konnte nicht geöffnet werden."
+    saveProfile = "Profil speichern"
+    clearProfile = "Profil löschen"
+    clearProfileConfirm = "Alle Profildaten, Kontakte, Allergien und Dokumente löschen?"
+    sectionGeneral = "Allgemein"
+    sectionAllergies = "Allergien"
+    sectionHealth = "Gesundheit"
+    sectionInsurance = "Versicherung"
+    sectionEmergency = "Notfall"
+    sectionContacts = "Kontakte"
+    sectionDocuments = "Dokumente"
+    bloodType = "Blutgruppe"
+    heightCm = "Größe (cm)"
+    weightKg = "Gewicht (kg)"
+    bmi = "BMI"
+    aidsNotes = "Hilfsmittel (Sehhilfe, Hörgerät, …)"
+    organDonor = "Organspendeausweis"
+    preferredPharmacy = "Bevorzugte Apotheke"
+    otherNotes = "Sonstige Notizen"
+    allergyName = "Allergie / Unverträglichkeit"
+    allergySeverity = "Schweregrad"
+    addAllergy = "Allergie hinzufügen"
+    chronicConditions = "Chronische Erkrankungen"
+    implantsNotes = "Implantate / Prothesen"
+    pregnancyNotes = "Schwangerschaft / Stillzeit"
+    smokingAlcoholNotes = "Rauchen / Alkohol"
+    vaccinationNotes = "Impfstatus-Notiz"
+    lastCheckupNotes = "Letzte Vorsorge"
+    lastBloodPressure = "Letzter Blutdruck"
+    lastBloodSugar = "Letzter Blutzucker"
+    insuranceName = "Krankenkasse"
+    insuranceNumber = "Versichertennummer"
+    emergencyNotes = "Notfallhinweise"
+    contactName = "Name"
+    contactCategory = "Kategorie"
+    contactSpecialty = "Fachrichtung"
+    contactPhone = "Telefon"
+    contactEmail = "E-Mail"
+    contactAddress = "Adresse"
+    contactEmergency = "Notfallkontakt"
+    addContact = "Kontakt hinzufügen"
+    categoryDoctor = "Arzt"
+    categoryPharmacy = "Apotheke"
+    categoryEmergency = "Notfall"
+    categoryFamily = "Familie"
+    categoryOther = "Sonstiges"
+    documentTitle = "Titel"
+    documentCategory = "Kategorie"
+    documentDate = "Dokumentdatum"
+    addDocument = "PDF hinzufügen"
+    openDocument = "Öffnen"
+    deleteDocument = "Dokument löschen"
+    noDocuments = "Noch keine Dokumente"
+    noContacts = "Noch keine Kontakte"
+    noAllergies = "Keine Allergien eingetragen"
+    docCategoryLab = "Labor"
+    docCategoryLetter = "Arztbrief"
+    docCategoryImaging = "Bildgebung"
+    docCategoryOther = "Sonstiges"
+    deleteDataSection = "Daten löschen"
+    allData = "Alle Daten"
+    profileData = "Profildaten"
+    medicationData = "Medikationen"
+    deleteSelectedData = "Ausgewählte Daten löschen"
+    deleteDataConfirm = "Ausgewählte Daten endgültig löschen? Dies kann nicht rückgängig gemacht werden."
+    backupPdf = "Backup / PDF"
+    regularBackupQuestion = "Daten regelmäßig speichern?"
+    backupFrequency = "Häufigkeit"
+    weeklySunday = "Wöchentlich (Sonntag)"
+    monthlyLastDay = "Monatlich (letzter Tag)"
+    quarterlyEnd = "Alle 3 Monate (Quartalsende)"
+    semiannualEnd = "Alle 6 Monate (30.6., 31.12.)"
+    manualPdfExport = "Manueller PDF-Export"
+    fromDate = "Von-Datum (dd/MM/yyyy)"
+    toDate = "Bis-Datum (dd/MM/yyyy)"
+    allMedications = "Alle Medikationen"
+    selectMedications = "Medikationen auswählen"
+    generatePdf = "PDF erstellen"
+    pdfCreated = "PDF erstellt und unter Profil > Dokumente hinzugefügt."
+    invalidDateRange = "Geben Sie einen gültigen Zeitraum im Format dd/MM/yyyy ein."
+    dataDeleted = "Ausgewählte Daten wurden gelöscht."
+    yes = "Ja"
+    no = "Nein"
     notSet = "Nicht gesetzt"
-)
-
+}
 fun stringsFor(language: AppLanguage): AppStrings = when (language) {
     AppLanguage.EN -> EnglishStrings
     AppLanguage.DE -> GermanStrings

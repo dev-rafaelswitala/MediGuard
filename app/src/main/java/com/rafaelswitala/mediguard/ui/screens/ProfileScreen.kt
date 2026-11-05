@@ -156,8 +156,6 @@ fun ProfileScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(strings.profileDisclaimer, style = MaterialTheme.typography.bodySmall)
-
             ProfileAccordion(strings.sectionPersonal, ProfileSection.PERSONAL, expanded, { expanded = it }) {
                 SectionActions(editing == ProfileSection.PERSONAL, strings.edit, strings.save, strings.cancel,
                     { editing = ProfileSection.PERSONAL }, { save(ProfileSection.PERSONAL) }) {

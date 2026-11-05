@@ -132,6 +132,15 @@ class MedicationNotificationManager @Inject constructor(
             }
         }
 
+        // Sperrbildschirm: nur generischer Hinweis, ohne Medikamentennamen
+        builder.setPublicVersion(
+            createLockedNotification(
+                notificationId = notificationId.toLong(),
+                strings = strings,
+                alertMode = settings.alertMode
+            ).build()
+        )
+
         if (settings.alertMode == AppAlertMode.ALARM) {
             AlarmRingingService.start(
                 context = context,
@@ -143,6 +152,7 @@ class MedicationNotificationManager @Inject constructor(
                     strings.notificationMedicationGroupReminder
                 },
                 message = notificationMessage(items, strings),
+                lockScreenTitle = strings.notificationMedicationReminder,
                 scheduleIds = scheduleIds,
                 historyIds = items.mapNotNull { it.historyId },
                 scheduledTime = scheduledTime,

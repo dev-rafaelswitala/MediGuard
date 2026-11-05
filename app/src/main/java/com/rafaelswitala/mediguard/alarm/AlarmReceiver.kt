@@ -226,6 +226,46 @@ class AlarmReceiver : BroadcastReceiver() {
             items = items,
             notificationId = notificationId
         )
+
+        // Tageszeit-Nachfass: nach Mitte ggf. Ende als nächste Erinnerung planen
+        val originalStart = histories.minOf { it.scheduledTime }
+        scheduleNextDayPeriodFollowUp(
+            entryPoint = entryPoint,
+            scheduleIds = scheduleIds,
+            historyIds = histories.map { it.id },
+            notificationId = notificationId,
+            periodStartMillis = originalStart,
+            afterMillis = scheduledTime
+        )
+    }
+
+    private suspend fun scheduleNextDayPeriodFollowUp(
+        entryPoint: AlarmReceiverEntryPoint,
+        scheduleIds: List<Long>,
+        historyIds: List<Long>,
+        notificationId: Int,
+        periodStartMillis: Long,
+        afterMillis: Long
+    ) {
+        val now = System.currentTimeMillis()
+        val daySettings = entryPoint.dayPeriodSettingsProvider().current()
+        val schedule = scheduleIds.firstOrNull()?.let {
+            entryPoint.scheduleRepository().getScheduleById(it)
+        } ?: return
+        val anchors = ReminderPlanFactory.dayPeriodAnchors(
+            schedule = schedule,
+            scheduledStartMillis = periodStartMillis,
+            dayPeriodSettings = daySettings
+        ) ?: return
+        val next = listOf(anchors.mid, anchors.end)
+            .firstOrNull { it > afterMillis + 1_000L && it > now }
+            ?: return
+        entryPoint.alarmScheduler().scheduleOneTimeReminder(
+            triggerAtMillis = next,
+            scheduleIds = scheduleIds,
+            historyIds = historyIds,
+            notificationId = notificationId
+        )
     }
 
     private suspend fun showUnlockedNotification(
@@ -294,14 +334,36 @@ class AlarmReceiver : BroadcastReceiver() {
 
         entryPoint.intakeHistoryRepository().setNotificationId(historyIds, notificationId)
 
-        effectiveWindowEnd?.let { endMillis ->
-            if (endMillis > now) {
-                entryPoint.alarmScheduler().scheduleWindowEnd(
-                    triggerAtMillis = endMillis,
+        // Tageszeit: Start-Benachrichtigung, danach Mitte/Ende als verkettete One-Time-Erinnerungen.
+        // Nach Fensterende (+ kurze Nachlaufzeit) wird als verpasst markiert.
+        val dayPeriodSchedule = dueAlarms.firstOrNull()?.schedule
+        val anchors = dayPeriodSchedule?.let {
+            ReminderPlanFactory.dayPeriodAnchors(it, scheduledTime, daySettings)
+        }
+        if (anchors != null) {
+            val nextFollowUp = listOf(anchors.mid, anchors.end).firstOrNull { it > now }
+            if (nextFollowUp != null) {
+                entryPoint.alarmScheduler().scheduleOneTimeReminder(
+                    triggerAtMillis = nextFollowUp,
+                    scheduleIds = dueAlarms.map { it.alarmData.scheduleId },
                     historyIds = historyIds,
                     notificationId = notificationId
                 )
             }
+            val missAt = anchors.end + DAY_PERIOD_MISS_GRACE_MS
+            if (missAt > now) {
+                entryPoint.alarmScheduler().scheduleWindowEnd(
+                    triggerAtMillis = missAt,
+                    historyIds = historyIds,
+                    notificationId = notificationId
+                )
+            }
+        } else if (effectiveWindowEnd != null && effectiveWindowEnd > now) {
+            entryPoint.alarmScheduler().scheduleWindowEnd(
+                triggerAtMillis = effectiveWindowEnd,
+                historyIds = historyIds,
+                notificationId = notificationId
+            )
         }
     }
 
@@ -319,6 +381,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
         private const val GROUP_WINDOW_MS = 10 * 60_000L
+        private const val DAY_PERIOD_MISS_GRACE_MS = 60_000L
     }
 }
 

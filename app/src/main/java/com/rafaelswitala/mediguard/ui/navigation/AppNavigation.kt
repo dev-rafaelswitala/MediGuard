@@ -71,6 +71,7 @@ fun AppNavigation(navController: NavHostController) {
         composable(Route.Medications.route) {
             MedicationsScreen(
                 viewModel = medicationViewModel,
+                historyViewModel = historyViewModel,
                 onNavigateToAdd = { navController.navigate(Route.AddMedication.route) },
                 onNavigateHome = { navigateTab(Route.Home.route) },
                 onNavigateHistory = { navigateTab(Route.History.route) },

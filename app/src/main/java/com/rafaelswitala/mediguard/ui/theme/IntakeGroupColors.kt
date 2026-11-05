@@ -7,6 +7,9 @@ package com.rafaelswitala.mediguard.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object IntakeGroupColors {
+    /** Feste Gruppen-ID für alle „Bei Bedarf“-Medikamente. */
+    const val PRN_GROUP_ID = 100
+
     val palette = listOf(
         Color(0xFFB3E5FC), // light blue
         Color(0xFFC8E6C9), // light green
@@ -18,6 +21,7 @@ object IntakeGroupColors {
 
     fun colorForGroupId(groupId: Int?): Color? {
         if (groupId == null || groupId <= 0) return null
+        if (groupId == PRN_GROUP_ID) return Color(0xFFB2DFDB) // teal for PRN cluster
         return palette[(groupId - 1) % palette.size]
     }
 }

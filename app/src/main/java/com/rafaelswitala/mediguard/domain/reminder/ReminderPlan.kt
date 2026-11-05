@@ -180,11 +180,27 @@ object ReminderPlanFactory {
         schedule: MedicationSchedule,
         scheduledStartMillis: Long,
         dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
-    ): Long? {
+    ): Long? = dayPeriodAnchors(schedule, scheduledStartMillis, dayPeriodSettings)?.end
+
+    /**
+     * Für Tageszeiten: Start, Mitte und Ende des Fensters (z. B. 06:00 / 08:00 / 10:00).
+     */
+    fun dayPeriodAnchors(
+        schedule: MedicationSchedule,
+        scheduledStartMillis: Long,
+        dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
+    ): DayPeriodAnchors? {
         if (schedule.scheduleType != FrequencyType.DAY_PERIOD) return null
         val period = ScheduleDataCodec.readPeriod(schedule.scheduleData)
         val range = dayPeriodSettings.rangeFor(period)
-        val cal = Calendar.getInstance().apply { timeInMillis = scheduledStartMillis }
+        val startCal = Calendar.getInstance().apply {
+            timeInMillis = scheduledStartMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.MINUTE, range.startMinutes)
+        }
         val endCal = Calendar.getInstance().apply {
             timeInMillis = scheduledStartMillis
             set(Calendar.HOUR_OF_DAY, 0)
@@ -192,13 +208,22 @@ object ReminderPlanFactory {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             add(Calendar.MINUTE, range.endMinutes)
-            // overnight windows (e.g. night crossing midnight)
             if (range.endMinutes < range.startMinutes &&
-                (cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)) >= range.startMinutes
+                (Calendar.getInstance().apply { timeInMillis = scheduledStartMillis }
+                    .let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }) >= range.startMinutes
             ) {
                 add(Calendar.DAY_OF_YEAR, 1)
             }
         }
-        return endCal.timeInMillis.coerceAtLeast(scheduledStartMillis + 60_000L)
+        val start = startCal.timeInMillis
+        val end = endCal.timeInMillis.coerceAtLeast(start + 60_000L)
+        val mid = start + (end - start) / 2
+        return DayPeriodAnchors(start = start, mid = mid, end = end)
     }
 }
+
+data class DayPeriodAnchors(
+    val start: Long,
+    val mid: Long,
+    val end: Long
+)

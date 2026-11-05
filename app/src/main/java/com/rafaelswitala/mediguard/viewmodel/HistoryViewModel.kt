@@ -199,15 +199,18 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun takePrnNow(medication: Medication) {
+        takePrnAt(medication, System.currentTimeMillis())
+    }
+
+    fun takePrnAt(medication: Medication, intakeTimeMillis: Long) {
         if (medication.planType != MedicationPlanType.PRN) return
         viewModelScope.launch {
             try {
-                val now = System.currentTimeMillis()
                 intakeHistoryRepository.recordIntake(
                     IntakeHistory(
                         medicationId = medication.id,
-                        scheduledTime = now,
-                        actualIntakeTime = now,
+                        scheduledTime = intakeTimeMillis,
+                        actualIntakeTime = intakeTimeMillis,
                         dosage = medication.dosage,
                         dosageUnit = medication.dosageUnit,
                         medicationName = medication.name,

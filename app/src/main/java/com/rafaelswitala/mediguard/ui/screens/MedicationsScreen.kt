@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,6 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import com.rafaelswitala.mediguard.domain.model.DayPeriod
 import com.rafaelswitala.mediguard.domain.model.FrequencyType
 import com.rafaelswitala.mediguard.domain.model.Medication
@@ -65,6 +69,7 @@ import com.rafaelswitala.mediguard.viewmodel.MedicationViewModel
 @Composable
 fun MedicationsScreen(
     viewModel: MedicationViewModel,
+    historyViewModel: com.rafaelswitala.mediguard.viewmodel.HistoryViewModel,
     onNavigateToAdd: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
@@ -80,14 +85,18 @@ fun MedicationsScreen(
     var showDeleteSelectionDialog by remember { mutableStateOf(false) }
     var showGroupDialog by remember { mutableStateOf(false) }
     var medicationToViewId by remember { mutableStateOf<Long?>(null) }
+    var prnMedicationToTake by remember { mutableStateOf<Medication?>(null) }
     val selectedMedicationIds = remember { mutableStateListOf<Long>() }
     val selectionMode = selectedMedicationIds.isNotEmpty()
     val selectedMedications = medications.filter { it.id in selectedMedicationIds }
     val schedulesByMedication = remember(allSchedules) { allSchedules.groupBy { it.medicationId } }
-    val firstScheduleGroupByMed = remember(allSchedules) {
-        allSchedules
-            .groupBy { it.medicationId }
-            .mapValues { (_, schedules) -> schedules.mapNotNull { it.intakeGroupId }.firstOrNull() }
+    val firstScheduleGroupByMed = remember(allSchedules, medications) {
+        medications.associate { medication ->
+            val fromSchedule = schedulesByMedication[medication.id]
+                ?.mapNotNull { it.intakeGroupId }
+                ?.firstOrNull()
+            medication.id to (fromSchedule ?: medication.intakeGroupId)
+        }
     }
 
     val viewingMedication = medications.firstOrNull { it.id == medicationToViewId }
@@ -231,7 +240,14 @@ fun MedicationsScreen(
                                 ?.let { formatSchedulesSummary(it, strings, language) },
                             isPrn = medication.planType == MedicationPlanType.PRN,
                             onPlanClick = onNavigateToPlan,
-                            onView = { medicationToViewId = medication.id },
+                            onView = { id ->
+                                val med = medications.firstOrNull { it.id == id }
+                                if (med?.planType == MedicationPlanType.PRN) {
+                                    prnMedicationToTake = med
+                                } else {
+                                    medicationToViewId = id
+                                }
+                            },
                             onLongPress = { id ->
                                 if (id !in selectedMedicationIds) {
                                     selectedMedicationIds.add(id)
@@ -270,6 +286,21 @@ fun MedicationsScreen(
             medication = viewingMedication,
             schedules = viewingSchedules,
             onDismiss = { medicationToViewId = null }
+        )
+    }
+
+    prnMedicationToTake?.let { medication ->
+        PrnIntakeDialog(
+            medication = medication,
+            onDismiss = { prnMedicationToTake = null },
+            onTakenJustNow = {
+                historyViewModel.takePrnNow(medication)
+                prnMedicationToTake = null
+            },
+            onTakenAt = { timeMillis ->
+                historyViewModel.takePrnAt(medication, timeMillis)
+                prnMedicationToTake = null
+            }
         )
     }
 
@@ -576,6 +607,79 @@ private fun formatSchedulesSummary(
         addAll(shown)
         if (remaining > 0) add("+$remaining ${strings.moreSchedules}")
     }.joinToString("\n")
+}
+
+@Composable
+private fun PrnIntakeDialog(
+    medication: Medication,
+    onDismiss: () -> Unit,
+    onTakenJustNow: () -> Unit,
+    onTakenAt: (Long) -> Unit
+) {
+    val strings = LocalAppStrings.current
+    var showTimeEntry by remember { mutableStateOf(false) }
+    var timeText by remember {
+        mutableStateOf(SimpleDateFormat("HH:mm", Locale.getDefault()).format(System.currentTimeMillis()))
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${strings.prnIntakeTitle}: ${medication.name}") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!showTimeEntry) {
+                    Button(onClick = onTakenJustNow, modifier = Modifier.fillMaxWidth()) {
+                        Text(strings.takenJustNow)
+                    }
+                    OutlinedButtonLike(
+                        onClick = { showTimeEntry = true },
+                        label = strings.takenAtSpecificTime
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = timeText,
+                        onValueChange = { timeText = it },
+                        label = { Text(strings.oneShotTime) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            parseTodayTime(timeText)?.let(onTakenAt)
+                        },
+                        enabled = parseTodayTime(timeText) != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(strings.save)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(strings.cancel) }
+        }
+    )
+}
+
+@Composable
+private fun OutlinedButtonLike(onClick: () -> Unit, label: String) {
+    androidx.compose.material3.OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Text(label)
+    }
+}
+
+private fun parseTodayTime(value: String): Long? {
+    val parts = value.trim().split(":")
+    if (parts.size != 2) return null
+    val hour = parts[0].toIntOrNull() ?: return null
+    val minute = parts[1].toIntOrNull() ?: return null
+    if (hour !in 0..23 || minute !in 0..59) return null
+    return Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 }
 
 private fun formatScheduleTime(hour: Int, minute: Int): String =
