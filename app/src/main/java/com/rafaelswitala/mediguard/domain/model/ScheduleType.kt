@@ -99,10 +99,16 @@ object ScheduleDataCodec {
         .put("period", period.name)
         .toString()
 
-    fun interval(intervalHours: Int, startHour: Int, startMinute: Int): String = JSONObject()
+    fun interval(
+        intervalHours: Int,
+        startHour: Int,
+        startMinute: Int,
+        endAtMillis: Long? = null
+    ): String = JSONObject()
         .put("intervalHours", intervalHours)
         .put("startHour", startHour)
         .put("startMinute", startMinute)
+        .apply { if (endAtMillis != null) put("endAtMillis", endAtMillis) }
         .toString()
 
     fun weekly(daysOfWeek: List<DayOfWeekEnum>, hour: Int, minute: Int): String = JSONObject()

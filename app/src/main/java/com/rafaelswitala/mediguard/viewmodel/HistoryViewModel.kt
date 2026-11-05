@@ -81,29 +81,43 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun previousMonth() {
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.YEAR, _selectedYearMonth.value.year)
-            set(Calendar.MONTH, _selectedYearMonth.value.month - 1)
-            add(Calendar.MONTH, -1)
-        }
-        _selectedYearMonth.value = YearMonthSelection(
-            year = cal.get(Calendar.YEAR),
-            month = cal.get(Calendar.MONTH) + 1
-        )
+        shiftMonths(-1)
     }
 
     fun nextMonth() {
+        shiftMonths(1)
+    }
+
+    fun previousYear() {
+        shiftMonths(-12)
+    }
+
+    fun nextYear() {
+        shiftMonths(12)
+    }
+
+    fun jumpTo(year: Int, month: Int) {
+        val current = currentYearMonth()
+        val target = YearMonthSelection(year = year, month = month.coerceIn(1, 12))
+        if (target.year > current.year || (target.year == current.year && target.month > current.month)) {
+            _selectedYearMonth.value = current
+        } else {
+            _selectedYearMonth.value = target
+        }
+    }
+
+    private fun shiftMonths(delta: Int) {
         val cal = Calendar.getInstance().apply {
             set(Calendar.YEAR, _selectedYearMonth.value.year)
             set(Calendar.MONTH, _selectedYearMonth.value.month - 1)
-            add(Calendar.MONTH, 1)
+            add(Calendar.MONTH, delta)
         }
         val next = YearMonthSelection(
             year = cal.get(Calendar.YEAR),
             month = cal.get(Calendar.MONTH) + 1
         )
         val current = currentYearMonth()
-        if (next.year > current.year || (next.year == current.year && next.month > current.month)) {
+        if (delta > 0 && (next.year > current.year || (next.year == current.year && next.month > current.month))) {
             return
         }
         _selectedYearMonth.value = next

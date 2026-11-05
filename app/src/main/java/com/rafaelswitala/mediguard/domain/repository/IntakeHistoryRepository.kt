@@ -20,6 +20,7 @@ interface IntakeHistoryRepository {
     suspend fun getIntakeHistoryById(id: Long): IntakeHistory?
     suspend fun getIntakeHistoryByNotificationId(notificationId: Int): List<IntakeHistory>
     suspend fun getExpiredWindows(now: Long): List<IntakeHistory>
+    suspend fun hasOccurrence(scheduleId: Long, scheduledTime: Long): Boolean
     fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>>
     fun getAllIntakeHistory(): Flow<List<IntakeHistory>>
     fun getIntakeHistoryInRange(from: Long, to: Long): Flow<List<IntakeHistory>>

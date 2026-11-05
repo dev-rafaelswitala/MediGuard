@@ -11,8 +11,10 @@ import androidx.lifecycle.viewModelScope
 import com.rafaelswitala.mediguard.alarm.AlarmScheduler
 import com.rafaelswitala.mediguard.data.settings.DayPeriodSettingsProvider
 import com.rafaelswitala.mediguard.domain.grouping.MedicationGroupingService
+import com.rafaelswitala.mediguard.domain.model.FrequencyType
 import com.rafaelswitala.mediguard.domain.model.Medication
 import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
+import com.rafaelswitala.mediguard.domain.model.ScheduleDataCodec
 import com.rafaelswitala.mediguard.domain.reminder.NextIntakeCalculator
 import com.rafaelswitala.mediguard.domain.reminder.UpcomingIntake
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
@@ -197,12 +199,51 @@ class MedicationViewModel @Inject constructor(
                 } else {
                     medicationRepository.addRemainingDoses(medicationId, addedAmount)
                 }
+                refreshIntervalEndDates(medicationId)
                 _uiState.value = _uiState.value.copy(successMessage = "Stock updated")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "Failed to update stock: ${e.message}"
                 )
             }
+        }
+    }
+
+    private suspend fun refreshIntervalEndDates(medicationId: Long) {
+        val medication = medicationRepository.getMedicationById(medicationId) ?: return
+        val schedules = scheduleRepository.getSchedulesByMedicationId(medicationId).first()
+        val updated = schedules.map { schedule ->
+            if (schedule.scheduleType != FrequencyType.INTERVAL) return@map schedule
+            val hours = ScheduleDataCodec.readInt(schedule.scheduleData, "intervalHours", 6)
+            val startHour = ScheduleDataCodec.readInt(schedule.scheduleData, "startHour", 8)
+            val startMinute = ScheduleDataCodec.readInt(schedule.scheduleData, "startMinute", 0)
+            val remainingUnits = when {
+                medication.medicationFormType.usesVolume() -> medication.remainingVolumeMl
+                else -> medication.remainingDoses
+            } ?: return@map schedule
+            val dose = when {
+                medication.medicationFormType.usesVolume() ->
+                    medication.dosePerIntakeMl ?: medication.doseQuantity
+                else -> medication.doseQuantity
+            }.takeIf { it > 0.0 } ?: return@map schedule
+            val intakes = kotlin.math.floor(remainingUnits / dose).toInt().coerceAtLeast(0)
+            if (intakes <= 0) return@map schedule
+            val endAt = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, startHour)
+                set(java.util.Calendar.MINUTE, startMinute)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(java.util.Calendar.DAY_OF_YEAR, 1)
+                }
+                add(java.util.Calendar.HOUR_OF_DAY, hours * (intakes - 1))
+            }.timeInMillis
+            schedule.copy(
+                scheduleData = ScheduleDataCodec.interval(hours, startHour, startMinute, endAt)
+            )
+        }
+        if (updated != schedules) {
+            replaceSchedulesInternal(medicationId, updated)
         }
     }
 

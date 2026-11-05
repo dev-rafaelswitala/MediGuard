@@ -27,8 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -51,14 +50,19 @@ import androidx.compose.ui.unit.dp
 import com.rafaelswitala.mediguard.data.settings.AppLanguage
 import com.rafaelswitala.mediguard.data.settings.AppAlertMode
 import com.rafaelswitala.mediguard.data.settings.AppThemeMode
+import com.rafaelswitala.mediguard.data.settings.BackupFrequency
 import com.rafaelswitala.mediguard.domain.model.DayPeriod
+import com.rafaelswitala.mediguard.domain.model.Medication
 import com.rafaelswitala.mediguard.domain.settings.DayPeriodSettings
 import com.rafaelswitala.mediguard.domain.settings.TimeRangeMinutes
+import com.rafaelswitala.mediguard.ui.components.ExpandableSettingsSection
 import com.rafaelswitala.mediguard.ui.components.StandardSectionCard
 import com.rafaelswitala.mediguard.ui.localization.LocalAppLanguage
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.SettingsViewModel
-import com.rafaelswitala.mediguard.viewmodel.ProfileViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 /**
  * Datei für die Einstellungen.
@@ -68,7 +72,6 @@ import com.rafaelswitala.mediguard.viewmodel.ProfileViewModel
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    profileViewModel: ProfileViewModel,
     onNavigateHome: () -> Unit = {},
     onNavigateMedications: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
@@ -77,7 +80,11 @@ fun SettingsScreen(
     val strings = LocalAppStrings.current
     val settings by viewModel.settings.collectAsState()
     val context = LocalContext.current
-    var showClearProfileDialog by remember { mutableStateOf(false) }
+    val medications by viewModel.medications.collectAsState()
+    val operationMessage by viewModel.operationMessage.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteProfile by remember { mutableStateOf(false) }
+    var deleteMedications by remember { mutableStateOf(false) }
     val ringtonePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -215,31 +222,70 @@ fun SettingsScreen(
                 onSave = viewModel::setDayPeriodSettings
             )
 
-            StandardSectionCard(title = strings.profile) {
-                Text(strings.clearProfileConfirm, style = MaterialTheme.typography.bodySmall)
+            ExpandableSettingsSection(title = strings.deleteDataSection) {
+                CheckRow(
+                    label = strings.allData,
+                    checked = deleteProfile && deleteMedications,
+                    onCheckedChange = { selected ->
+                        deleteProfile = selected
+                        deleteMedications = selected
+                    }
+                )
+                CheckRow(
+                    label = strings.profileData,
+                    checked = deleteProfile,
+                    onCheckedChange = { deleteProfile = it }
+                )
+                CheckRow(
+                    label = strings.medicationData,
+                    checked = deleteMedications,
+                    onCheckedChange = { deleteMedications = it }
+                )
                 Button(
-                    onClick = { showClearProfileDialog = true },
+                    onClick = { showDeleteDialog = true },
+                    enabled = deleteProfile || deleteMedications,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text(strings.clearProfile)
+                    Text(strings.deleteSelectedData)
                 }
+            }
+
+            BackupSettingsSection(
+                settingsEnabled = settings.backupEnabled,
+                frequency = settings.backupFrequency,
+                medications = medications,
+                strings = strings,
+                onBackupChanged = viewModel::setBackup,
+                onExport = viewModel::exportPdf
+            )
+
+            operationMessage?.let { message ->
+                val display = when (message) {
+                    "pdf_created" -> strings.pdfCreated
+                    "data_deleted" -> strings.dataDeleted
+                    else -> message
+                }
+                Text(display, style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
 
-    if (showClearProfileDialog) {
+    if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showClearProfileDialog = false },
-            title = { Text(strings.clearProfile) },
-            text = { Text(strings.clearProfileConfirm) },
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(strings.deleteDataSection) },
+            text = { Text(strings.deleteDataConfirm) },
             confirmButton = {
                 Button(
                     onClick = {
-                        profileViewModel.clearAll()
-                        showClearProfileDialog = false
+                        viewModel.deleteData(deleteProfile, deleteMedications) {
+                            deleteProfile = false
+                            deleteMedications = false
+                        }
+                        showDeleteDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
@@ -248,11 +294,134 @@ fun SettingsScreen(
                 ) { Text(strings.delete) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearProfileDialog = false }) { Text(strings.cancel) }
+                TextButton(onClick = { showDeleteDialog = false }) { Text(strings.cancel) }
             }
         )
     }
 }
+
+@Composable
+private fun BackupSettingsSection(
+    settingsEnabled: Boolean,
+    frequency: BackupFrequency,
+    medications: List<Medication>,
+    strings: com.rafaelswitala.mediguard.ui.localization.AppStrings,
+    onBackupChanged: (Boolean, BackupFrequency) -> Unit,
+    onExport: (LocalDate, LocalDate, Set<Long>?, (Boolean) -> Unit) -> Unit
+) {
+    val formatter = remember { DateTimeFormatter.ofPattern("dd/MM/uuuu") }
+    val today = remember { LocalDate.now() }
+    var fromText by remember { mutableStateOf(today.withDayOfMonth(1).format(formatter)) }
+    var toText by remember { mutableStateOf(today.format(formatter)) }
+    var allMedications by remember { mutableStateOf(true) }
+    var selectedMedicationIds by remember { mutableStateOf(emptySet<Long>()) }
+    var dateError by remember { mutableStateOf(false) }
+
+    ExpandableSettingsSection(title = strings.backupPdf) {
+        Text(strings.regularBackupQuestion, fontWeight = FontWeight.SemiBold)
+        ButtonRow(
+            items = listOf(true to strings.yes, false to strings.no),
+            selected = settingsEnabled,
+            onSelected = { enabled ->
+                onBackupChanged(
+                    enabled,
+                    if (enabled && frequency == BackupFrequency.NONE) BackupFrequency.WEEKLY else frequency
+                )
+            }
+        )
+        if (settingsEnabled) {
+            Text(strings.backupFrequency, fontWeight = FontWeight.SemiBold)
+            ButtonRow(
+                items = listOf(
+                    BackupFrequency.WEEKLY to strings.weeklySunday,
+                    BackupFrequency.MONTHLY to strings.monthlyLastDay,
+                    BackupFrequency.QUARTERLY to strings.quarterlyEnd,
+                    BackupFrequency.SEMIANNUAL to strings.semiannualEnd
+                ),
+                selected = frequency,
+                onSelected = { onBackupChanged(true, it) }
+            )
+        }
+
+        Text(strings.manualPdfExport, fontWeight = FontWeight.SemiBold)
+        OutlinedTextField(
+            value = fromText,
+            onValueChange = { fromText = it.filter { char -> char.isDigit() || char == '/' }.take(10) },
+            label = { Text(strings.fromDate) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = toText,
+            onValueChange = { toText = it.filter { char -> char.isDigit() || char == '/' }.take(10) },
+            label = { Text(strings.toDate) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        CheckRow(
+            label = strings.allMedications,
+            checked = allMedications,
+            onCheckedChange = { allMedications = it }
+        )
+        if (!allMedications) {
+            Text(strings.selectMedications, style = MaterialTheme.typography.bodySmall)
+            medications.forEach { medication ->
+                CheckRow(
+                    label = medication.name,
+                    checked = medication.id in selectedMedicationIds,
+                    onCheckedChange = { selected ->
+                        selectedMedicationIds = if (selected) {
+                            selectedMedicationIds + medication.id
+                        } else {
+                            selectedMedicationIds - medication.id
+                        }
+                    }
+                )
+            }
+        }
+        if (dateError) {
+            Text(strings.invalidDateRange, color = MaterialTheme.colorScheme.error)
+        }
+        Button(
+            enabled = allMedications || selectedMedicationIds.isNotEmpty(),
+            onClick = {
+                val from = tryParseDate(fromText, formatter)
+                val to = tryParseDate(toText, formatter)
+                if (from == null || to == null || to.isBefore(from)) {
+                    dateError = true
+                } else {
+                    dateError = false
+                    onExport(
+                        from,
+                        to,
+                        if (allMedications) null else selectedMedicationIds
+                    ) { success -> dateError = !success }
+                }
+            }
+        ) {
+            Text(strings.generatePdf)
+        }
+    }
+}
+
+@Composable
+private fun CheckRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(label)
+    }
+}
+
+private fun tryParseDate(value: String, formatter: DateTimeFormatter): LocalDate? =
+    try {
+        LocalDate.parse(value, formatter)
+    } catch (_: DateTimeParseException) {
+        null
+    }
 
 @Composable
 private fun DayPeriodSettingsSection(
@@ -274,7 +443,7 @@ private fun DayPeriodSettingsSection(
     }
     var gapMessage by remember { mutableStateOf<String?>(null) }
 
-    StandardSectionCard(title = strings.dayPeriodSettings) {
+    ExpandableSettingsSection(title = strings.dayPeriodSettings) {
         Text(strings.dayPeriodSettingsHint, style = MaterialTheme.typography.bodySmall)
         DayPeriod.entries.forEach { period ->
             val range = draftTexts.getValue(period)

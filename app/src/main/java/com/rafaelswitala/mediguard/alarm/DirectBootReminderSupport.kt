@@ -48,26 +48,39 @@ object DirectBootAlarmScheduler {
         )
 
         val now = System.currentTimeMillis()
-        val nextAlarmTime = when {
-            alarmData.nextTriggerAtMillis > now -> alarmData.nextTriggerAtMillis
-            allowImmediateIfOverdue && now - alarmData.nextTriggerAtMillis <= OVERDUE_GRACE_MS -> now + 1_000L
-            else -> ReminderPlanFactory.from(
-                schedule,
-                DayPeriodSettings.Default
-            ).nextTriggerAfter(now) ?: return
+        val originalTrigger = alarmData.nextTriggerAtMillis
+        val (fireAt, scheduledStamp) = when {
+            originalTrigger > now -> originalTrigger to originalTrigger
+            allowImmediateIfOverdue && now - originalTrigger <= OVERDUE_GRACE_MS ->
+                (now + 1_000L) to originalTrigger
+            else -> {
+                MissedOccurrenceRecorder.recordIfNeeded(
+                    context = context,
+                    medicationId = alarmData.medicationId,
+                    scheduleId = alarmData.scheduleId,
+                    scheduledTime = originalTrigger,
+                    schedule = schedule
+                )
+                val next = ReminderPlanFactory.from(
+                    schedule,
+                    DayPeriodSettings.Default
+                ).nextTriggerAfter(now) ?: return
+                next to next
+            }
         }
 
         scheduleExact(
             context = context,
             scheduleId = alarmData.scheduleId,
             medicationId = alarmData.medicationId,
-            triggerAtMillis = nextAlarmTime
+            triggerAtMillis = fireAt,
+            scheduledTimeStamp = scheduledStamp
         )
 
         directBootAlarmStore.saveAlarmSchedule(
             scheduleId = alarmData.scheduleId,
             medicationId = alarmData.medicationId,
-            nextTriggerAtMillis = nextAlarmTime,
+            nextTriggerAtMillis = fireAt,
             scheduleType = alarmData.scheduleType,
             scheduleData = alarmData.scheduleData
         )
@@ -77,14 +90,15 @@ object DirectBootAlarmScheduler {
         context: Context,
         scheduleId: Long,
         medicationId: Long,
-        triggerAtMillis: Long
+        triggerAtMillis: Long,
+        scheduledTimeStamp: Long = triggerAtMillis
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = ReminderActions.ACTION_RECURRING_ALARM
             putExtra(AndroidAlarmScheduler.EXTRA_MEDICATION_ID, medicationId)
             putExtra(AndroidAlarmScheduler.EXTRA_SCHEDULE_ID, scheduleId)
-            putExtra(AndroidAlarmScheduler.EXTRA_SCHEDULED_TIME, triggerAtMillis)
+            putExtra(AndroidAlarmScheduler.EXTRA_SCHEDULED_TIME, scheduledTimeStamp)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,

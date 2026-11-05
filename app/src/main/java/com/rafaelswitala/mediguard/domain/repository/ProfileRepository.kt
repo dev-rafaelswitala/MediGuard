@@ -30,6 +30,11 @@ interface ProfileRepository {
         documentDateMillis: Long?,
         notes: String?
     ): Long
+    suspend fun insertGeneratedDocument(
+        file: File,
+        title: String,
+        documentDateMillis: Long = System.currentTimeMillis()
+    ): Long
     suspend fun deleteDocument(document: MedicalDocument)
     fun documentFile(document: MedicalDocument): File
     suspend fun clearAll()

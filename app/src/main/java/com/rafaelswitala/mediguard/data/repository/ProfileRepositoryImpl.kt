@@ -116,6 +116,26 @@ class ProfileRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun insertGeneratedDocument(
+        file: File,
+        title: String,
+        documentDateMillis: Long
+    ): Long {
+        require(file.parentFile?.canonicalFile == documentsDir.canonicalFile) {
+            "Generated document must be stored in the app documents directory"
+        }
+        return documentDao.insert(
+            MedicalDocumentEntity(
+                title = title,
+                category = DocumentCategory.OTHER.name,
+                fileName = file.name,
+                mimeType = "application/pdf",
+                documentDateMillis = documentDateMillis,
+                notes = null
+            )
+        )
+    }
+
     override suspend fun deleteDocument(document: MedicalDocument) {
         documentFile(document).delete()
         documentDao.delete(document.toEntity())

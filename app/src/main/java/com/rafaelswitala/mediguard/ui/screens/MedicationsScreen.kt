@@ -295,8 +295,7 @@ private fun EmptyMedicationsState(onAdd: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
     ) {
-        Text(strings.createMedicationNow, style = MaterialTheme.typography.headlineSmall)
-        Button(onClick = onAdd, modifier = Modifier.padding(top = 16.dp)) {
+        Button(onClick = onAdd) {
             Text(strings.addMedication)
         }
     }

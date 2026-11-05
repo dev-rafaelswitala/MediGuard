@@ -93,4 +93,12 @@ interface IntakeHistoryDao {
 
     @Query("UPDATE intake_history SET notificationId = :notificationId WHERE id IN (:ids)")
     suspend fun setNotificationId(ids: List<Long>, notificationId: Int)
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM intake_history
+        WHERE scheduleId = :scheduleId AND scheduledTime = :scheduledTime
+        """
+    )
+    suspend fun countForOccurrence(scheduleId: Long, scheduledTime: Long): Int
 }

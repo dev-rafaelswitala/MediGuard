@@ -7,7 +7,9 @@ package com.rafaelswitala.mediguard.data.settings
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
@@ -48,13 +50,24 @@ enum class AppAlertMode {
     }
 }
 
+enum class BackupFrequency {
+    NONE,
+    WEEKLY,
+    MONTHLY,
+    QUARTERLY,
+    SEMIANNUAL
+}
+
 data class AppSettings(
     val themeMode: AppThemeMode = AppThemeMode.LIGHT,
     val language: AppLanguage = AppLanguage.EN,
     val alertMode: AppAlertMode = AppAlertMode.ALARM,
     val ringtoneUri: String? = null,
     val ringtoneTitle: String? = null,
-    val dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
+    val dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default,
+    val backupEnabled: Boolean = false,
+    val backupFrequency: BackupFrequency = BackupFrequency.NONE,
+    val backupLastSuccessAt: Long? = null
 )
 
 @Singleton
@@ -70,7 +83,11 @@ class AppPreferencesRepository @Inject constructor(
             alertMode = AppAlertMode.fromStoredValue(preferences[alertModeKey]),
             ringtoneUri = preferences[ringtoneUriKey],
             ringtoneTitle = preferences[ringtoneTitleKey],
-            dayPeriodSettings = DayPeriodSettings.fromJson(preferences[dayPeriodSettingsKey])
+            dayPeriodSettings = DayPeriodSettings.fromJson(preferences[dayPeriodSettingsKey]),
+            backupEnabled = preferences[backupEnabledKey] ?: false,
+            backupFrequency = preferences[backupFrequencyKey]
+                ?.toEnumOrDefault(BackupFrequency.NONE) ?: BackupFrequency.NONE,
+            backupLastSuccessAt = preferences[backupLastSuccessAtKey]
         )
     }
 
@@ -112,6 +129,19 @@ class AppPreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun setBackupSettings(enabled: Boolean, frequency: BackupFrequency) {
+        context.appSettingsDataStore.edit { preferences ->
+            preferences[backupEnabledKey] = enabled
+            preferences[backupFrequencyKey] = if (enabled) frequency.name else BackupFrequency.NONE.name
+        }
+    }
+
+    suspend fun setBackupLastSuccessAt(timestamp: Long) {
+        context.appSettingsDataStore.edit { preferences ->
+            preferences[backupLastSuccessAtKey] = timestamp
+        }
+    }
+
     private inline fun <reified T : Enum<T>> String.toEnumOrDefault(defaultValue: T): T =
         runCatching { enumValueOf<T>(this) }.getOrDefault(defaultValue)
 
@@ -122,5 +152,8 @@ class AppPreferencesRepository @Inject constructor(
         private val ringtoneUriKey = stringPreferencesKey("ringtone_uri")
         private val ringtoneTitleKey = stringPreferencesKey("ringtone_title")
         private val dayPeriodSettingsKey = stringPreferencesKey("day_period_settings")
+        private val backupEnabledKey = booleanPreferencesKey("backup_enabled")
+        private val backupFrequencyKey = stringPreferencesKey("backup_frequency")
+        private val backupLastSuccessAtKey = longPreferencesKey("backup_last_success_at")
     }
 }

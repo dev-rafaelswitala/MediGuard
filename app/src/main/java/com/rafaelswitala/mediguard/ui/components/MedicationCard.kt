@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,7 @@ fun MedicationCard(
 ) {
     val strings = LocalAppStrings.current
     val groupColor = IntakeGroupColors.colorForGroupId(scheduleGroupId ?: medication.intakeGroupId)
+    val showPlanButton = !selectionMode && !isPrn && scheduleSummary == null
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -75,7 +77,7 @@ fun MedicationCard(
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.Top
+            verticalAlignment = Alignment.Top
         ) {
             if (selectionMode) {
                 Checkbox(
@@ -147,13 +149,10 @@ fun MedicationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                if (!selectionMode) {
-                    TextButton(
-                        onClick = { onPlanClick(medication.id) },
-                        modifier = Modifier.padding(start = 0.dp)
-                    ) {
-                        Text(strings.plan)
-                    }
+            }
+            if (showPlanButton) {
+                TextButton(onClick = { onPlanClick(medication.id) }) {
+                    Text(strings.plan)
                 }
             }
         }

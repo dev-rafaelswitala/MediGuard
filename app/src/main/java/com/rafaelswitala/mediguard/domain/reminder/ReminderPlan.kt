@@ -59,6 +59,7 @@ class IntervalReminder(
     private val intervalHours: Int,
     private val startHour: Int,
     private val startMinute: Int,
+    private val endAtMillis: Long? = null,
     dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
 ) : BaseReminder(schedule, dayPeriodSettings) {
     override fun nextTriggerAfter(now: Long): Long? {
@@ -69,6 +70,7 @@ class IntervalReminder(
             candidate += intervalMillis
         }
 
+        if (endAtMillis != null && candidate > endAtMillis) return null
         return candidate
     }
 }
@@ -150,6 +152,8 @@ object ReminderPlanFactory {
             intervalHours = ScheduleDataCodec.readInt(schedule.scheduleData, "intervalHours", 6),
             startHour = ScheduleDataCodec.readInt(schedule.scheduleData, "startHour", 8),
             startMinute = ScheduleDataCodec.readInt(schedule.scheduleData, "startMinute", 0),
+            endAtMillis = ScheduleDataCodec.readLong(schedule.scheduleData, "endAtMillis", 0L)
+                .takeIf { it > 0L },
             dayPeriodSettings = dayPeriodSettings
         )
 

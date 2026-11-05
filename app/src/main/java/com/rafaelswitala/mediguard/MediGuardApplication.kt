@@ -10,7 +10,9 @@ import android.os.Build
 import android.os.UserManager
 import com.rafaelswitala.mediguard.alarm.AlarmScheduler
 import com.rafaelswitala.mediguard.alarm.DirectBootAlarmScheduler
+import com.rafaelswitala.mediguard.backup.MedicationBackupWorker
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
+import com.rafaelswitala.mediguard.data.settings.AppPreferencesRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationScheduleRepository
 import com.rafaelswitala.mediguard.domain.usecases.MarkExpiredWindowsUseCase
 import dagger.hilt.EntryPoint
@@ -52,6 +54,8 @@ class MediGuardApplication : Application() {
                 this,
                 MediGuardApplicationEntryPoint::class.java
             )
+            val backupSettings = entryPoint.appPreferencesRepository().settings.first()
+            MedicationBackupWorker.updateSchedule(this, backupSettings.backupEnabled)
             entryPoint.markExpiredWindowsUseCase()()
             entryPoint.medicationScheduleRepository().getAllActiveSchedules().first().forEach { schedule ->
                 entryPoint.alarmScheduler().scheduleAlarm(schedule)
@@ -72,4 +76,5 @@ interface MediGuardApplicationEntryPoint {
     fun alarmScheduler(): AlarmScheduler
     fun medicationScheduleRepository(): MedicationScheduleRepository
     fun markExpiredWindowsUseCase(): MarkExpiredWindowsUseCase
+    fun appPreferencesRepository(): AppPreferencesRepository
 }

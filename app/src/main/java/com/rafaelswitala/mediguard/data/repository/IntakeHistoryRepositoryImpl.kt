@@ -62,6 +62,9 @@ class IntakeHistoryRepositoryImpl @Inject constructor(
     override suspend fun getExpiredWindows(now: Long): List<IntakeHistory> =
         intakeHistoryDao.getExpiredWindows(now).map { it.toDomain() }
 
+    override suspend fun hasOccurrence(scheduleId: Long, scheduledTime: Long): Boolean =
+        intakeHistoryDao.countForOccurrence(scheduleId, scheduledTime) > 0
+
     override fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>> =
         intakeHistoryDao.getIntakeHistoryByMedicationId(medicationId).map { it.map { e -> e.toDomain() } }
 

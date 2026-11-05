@@ -46,12 +46,18 @@ import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar
 import com.rafaelswitala.mediguard.ui.components.MediGuardTab
 import com.rafaelswitala.mediguard.ui.components.StandardSectionCard
+import com.rafaelswitala.mediguard.data.settings.AppLanguage
+import com.rafaelswitala.mediguard.ui.localization.LocalAppLanguage
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.HistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,9 +76,11 @@ fun HistoryScreen(
     val filterMedicationId by viewModel.filterMedicationId
     val filterStatus by viewModel.filterStatus
     val onlyEditedLate by viewModel.onlyEditedLate
+    val language = LocalAppLanguage.current
     val filtered = viewModel.filteredEntries(intakeHistory)
     val adherence = viewModel.adherenceFor(filtered)
     var editingEntry by remember { mutableStateOf<IntakeHistory?>(null) }
+    var showMonthPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -106,15 +114,47 @@ fun HistoryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = viewModel::previousMonth) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = strings.previousMonth)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = viewModel::previousYear) {
+                        Icon(Icons.Default.KeyboardDoubleArrowLeft, contentDescription = strings.previousYear)
+                    }
+                    IconButton(onClick = viewModel::previousMonth) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = strings.previousMonth)
+                    }
                 }
-                Text(
-                    formatYearMonth(yearMonth.year, yearMonth.month),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                IconButton(onClick = viewModel::nextMonth) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = strings.nextMonth)
+                TextButton(onClick = { showMonthPicker = true }) {
+                    Text(
+                        formatYearMonth(yearMonth.year, yearMonth.month, language),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                DropdownMenu(expanded = showMonthPicker, onDismissRequest = { showMonthPicker = false }) {
+                    val locale = historyLocale(language)
+                    (0 until 24).forEach { offset ->
+                        val cal = Calendar.getInstance().apply {
+                            add(Calendar.MONTH, -offset)
+                            set(Calendar.DAY_OF_MONTH, 1)
+                        }
+                        val y = cal.get(Calendar.YEAR)
+                        val m = cal.get(Calendar.MONTH) + 1
+                        DropdownMenuItem(
+                            text = {
+                                Text(SimpleDateFormat("MMMM yyyy", locale).format(cal.time))
+                            },
+                            onClick = {
+                                viewModel.jumpTo(y, m)
+                                showMonthPicker = false
+                            }
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = viewModel::nextMonth) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = strings.nextMonth)
+                    }
+                    IconButton(onClick = viewModel::nextYear) {
+                        Icon(Icons.Default.KeyboardDoubleArrowRight, contentDescription = strings.nextYear)
+                    }
                 }
             }
 
@@ -307,13 +347,18 @@ private fun formatDate(timestamp: Long): String {
     return sdf.format(Date(timestamp))
 }
 
-private fun formatYearMonth(year: Int, month: Int): String {
+private fun formatYearMonth(year: Int, month: Int, language: AppLanguage): String {
     val cal = Calendar.getInstance().apply {
         set(Calendar.YEAR, year)
         set(Calendar.MONTH, month - 1)
         set(Calendar.DAY_OF_MONTH, 1)
     }
-    return SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+    return SimpleDateFormat("MMMM yyyy", historyLocale(language)).format(cal.time)
+}
+
+private fun historyLocale(language: AppLanguage): Locale = when (language) {
+    AppLanguage.DE -> Locale.GERMAN
+    AppLanguage.EN -> Locale.ENGLISH
 }
 
 private fun parseFlexibleDate(value: String): Long? =

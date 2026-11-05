@@ -124,99 +124,99 @@ fun HomeScreen(
             ) {
                 item { HeaderCard() }
 
-                if (missedGroups.isNotEmpty()) {
-                    item {
-                        Text(
-                            strings.missedSection,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                    items(missedGroups, key = { group -> "missed-${group.joinToString("-") { it.id.toString() }}" }) { group ->
-                        PendingIntakeCard(
-                            entries = group,
-                            primaryLabel = strings.lateTake,
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
-                            onStopAlarm = historyViewModel::stopAlarm
-                        )
-                    }
-                }
-
-                item {
-                    Text(
-                        strings.dueNow,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                }
-
-                if (pendingGroups.isEmpty()) {
-                    item { NoDueMedicationCard() }
-                } else {
-                    items(pendingGroups, key = { group -> "pending-${group.joinToString("-") { it.id.toString() }}" }) { group ->
-                        PendingIntakeCard(
-                            entries = group,
-                            primaryLabel = strings.markGroupTaken,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
-                            onStopAlarm = historyViewModel::stopAlarm
-                        )
-                    }
-                }
-
-                if (prnMedications.isNotEmpty()) {
-                    item {
-                        Text(
-                            strings.prnSection,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                    items(prnMedications, key = { "prn-${it.id}" }) { medication ->
-                        PrnMedicationCard(
-                            medication = medication,
-                            onTakeNow = { historyViewModel.takePrnNow(medication) }
-                        )
-                    }
-                }
-
-                if (lowSupplyMedications.isNotEmpty()) {
-                    item {
-                        Text(
-                            strings.lowSupplyTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                    items(lowSupplyMedications, key = { "supply-${it.id}" }) { medication ->
-                        LowSupplyCard(
-                            medication = medication,
-                            onRestock = { medicationToRestock = medication }
-                        )
-                    }
-                }
-
-                if (upcomingIntakes.isNotEmpty()) {
-                    item {
-                        Text(
-                            strings.nextIntakes,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                    items(upcomingIntakes, key = { "next-${it.medication.id}-${it.triggerAtMillis}" }) { intake ->
-                        NextIntakeCard(intake = intake)
-                    }
-                }
-
                 if (medications.isEmpty()) {
                     item { EmptyState() }
+                } else {
+                    if (missedGroups.isNotEmpty()) {
+                        item {
+                            Text(
+                                strings.missedSection,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                        items(missedGroups, key = { group -> "missed-${group.joinToString("-") { it.id.toString() }}" }) { group ->
+                            PendingIntakeCard(
+                                entries = group,
+                                primaryLabel = strings.lateTake,
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
+                                onStopAlarm = historyViewModel::stopAlarm
+                            )
+                        }
+                    }
+
+                    item {
+                        Text(
+                            strings.dueNow,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+
+                    if (pendingGroups.isEmpty()) {
+                        item { NoDueMedicationCard() }
+                    } else {
+                        items(pendingGroups, key = { group -> "pending-${group.joinToString("-") { it.id.toString() }}" }) { group ->
+                            PendingIntakeCard(
+                                entries = group,
+                                primaryLabel = strings.markGroupTaken,
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
+                                onStopAlarm = historyViewModel::stopAlarm
+                            )
+                        }
+                    }
+
+                    if (prnMedications.isNotEmpty()) {
+                        item {
+                            Text(
+                                strings.prnSection,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                        items(prnMedications, key = { "prn-${it.id}" }) { medication ->
+                            PrnMedicationCard(
+                                medication = medication,
+                                onTakeNow = { historyViewModel.takePrnNow(medication) }
+                            )
+                        }
+                    }
+
+                    if (lowSupplyMedications.isNotEmpty()) {
+                        item {
+                            Text(
+                                strings.lowSupplyTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                        items(lowSupplyMedications, key = { "supply-${it.id}" }) { medication ->
+                            LowSupplyCard(
+                                medication = medication,
+                                onRestock = { medicationToRestock = medication }
+                            )
+                        }
+                    }
+
+                    if (upcomingIntakes.isNotEmpty()) {
+                        item {
+                            Text(
+                                strings.nextIntakes,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                        items(upcomingIntakes, key = { "next-${it.medication.id}-${it.triggerAtMillis}" }) { intake ->
+                            NextIntakeCard(intake = intake)
+                        }
+                    }
                 }
             }
         }
@@ -264,7 +264,11 @@ private fun EmptyState() {
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(strings.noReminders, style = MaterialTheme.typography.headlineSmall)
+            Text(
+                strings.noReminders,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 strings.noRemindersBody,
                 style = MaterialTheme.typography.bodyMedium,

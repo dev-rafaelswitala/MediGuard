@@ -16,6 +16,7 @@ import com.rafaelswitala.mediguard.domain.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
@@ -137,6 +138,47 @@ class ProfileViewModel @Inject constructor(
 
     fun clearAll() {
         viewModelScope.launch { profileRepository.clearAll() }
+    }
+
+    fun seedSampleDocumentsIfEmpty() {
+        viewModelScope.launch {
+            val existing = profileRepository.observeDocuments().first()
+            if (existing.isNotEmpty()) return@launch
+            val samples = listOf(
+                "Beispiel_Labor_Blutbild_2026-01-15.pdf" to "Beispiel Labor: Blutbild",
+                "Beispiel_Arztbrief_Hausarzt_2026-02-03.pdf" to "Beispiel Arztbrief",
+                "Medikation_Quartal_Jan-Mar_2026.pdf" to "Beispiel Medikationsbericht"
+            )
+            samples.forEach { (fileName, title) ->
+                val file = profileRepository.documentFile(
+                    MedicalDocument(title = title, fileName = fileName)
+                )
+                file.parentFile?.mkdirs()
+                if (!file.exists()) {
+                    writeSamplePdf(file, title)
+                }
+                profileRepository.insertGeneratedDocument(file, title)
+            }
+        }
+    }
+
+    private fun writeSamplePdf(file: File, title: String) {
+        val document = android.graphics.pdf.PdfDocument()
+        val pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas = page.canvas
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.BLACK
+            textSize = 16f
+            isAntiAlias = true
+        }
+        canvas.drawText(title, 48f, 72f, paint)
+        paint.textSize = 12f
+        canvas.drawText("Dies ist eine Beispieldatei zur Anzeige im Profil.", 48f, 110f, paint)
+        canvas.drawText("Erstellt fuer MediGuard Emulator-Test.", 48f, 132f, paint)
+        document.finishPage(page)
+        file.outputStream().use { document.writeTo(it) }
+        document.close()
     }
 
     fun clearMessages() {

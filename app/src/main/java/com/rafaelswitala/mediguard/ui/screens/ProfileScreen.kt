@@ -99,6 +99,10 @@ fun ProfileScreen(
     var documentTitle by remember { mutableStateOf("") }
     var documentCategory by remember { mutableStateOf(DocumentCategory.OTHER) }
 
+    LaunchedEffect(Unit) {
+        viewModel.seedSampleDocumentsIfEmpty()
+    }
+
     LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
         val message = when (uiState.successMessage) {
             "document_imported" -> strings.documentImported
