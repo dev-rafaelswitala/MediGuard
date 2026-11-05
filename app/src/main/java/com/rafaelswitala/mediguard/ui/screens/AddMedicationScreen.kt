@@ -115,7 +115,7 @@ fun AddMedicationScreen(
 
     LaunchedEffect(isEditing, editingMedication, editingSchedules) {
         if (initialized) return@LaunchedEffect
-        if (isEditing && editingMedication == null) return@LaunchedEffect
+        if (isEditing && editingMedication?.id != medicationId) return@LaunchedEffect
 
         val medication = editingMedication
         if (medication != null) {
@@ -218,9 +218,9 @@ fun AddMedicationScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    val baseMedication = editingMedication
+                    val baseMedication = editingMedication?.takeIf { it.id == medicationId }
                     val medication = Medication(
-                        id = baseMedication?.id ?: 0,
+                        id = medicationId ?: 0,
                         name = medicationName.trim(),
                         dosage = dosage.trim(),
                         dosageUnit = dosageUnit.trim().ifBlank { medicationFormType.defaultUnit() },

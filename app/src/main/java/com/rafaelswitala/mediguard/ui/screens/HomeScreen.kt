@@ -28,6 +28,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +54,7 @@ import com.rafaelswitala.mediguard.domain.reminder.UpcomingIntake
 import com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar
 import com.rafaelswitala.mediguard.ui.components.MediGuardTab
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
+import com.rafaelswitala.mediguard.ui.theme.Warning
 import com.rafaelswitala.mediguard.viewmodel.HistoryViewModel
 import com.rafaelswitala.mediguard.viewmodel.MedicationViewModel
 import java.text.SimpleDateFormat
@@ -88,6 +92,15 @@ fun HomeScreen(
     var medicationToRestock by remember { mutableStateOf<Medication?>(null) }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(strings.appName) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    titleContentColor = MaterialTheme.colorScheme.onSecondary
+                )
+            )
+        },
         bottomBar = {
             MediGuardBottomBar(
                 selected = MediGuardTab.HOME,
@@ -120,10 +133,11 @@ fun HomeScreen(
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
-                    items(missedGroups, key = { "missed-${it.first().id}" }) { group ->
+                    items(missedGroups, key = { group -> "missed-${group.joinToString("-") { it.id.toString() }}" }) { group ->
                         PendingIntakeCard(
                             entries = group,
                             primaryLabel = strings.lateTake,
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
                             onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
                             onStopAlarm = historyViewModel::stopAlarm
                         )
@@ -142,10 +156,11 @@ fun HomeScreen(
                 if (pendingGroups.isEmpty()) {
                     item { NoDueMedicationCard() }
                 } else {
-                    items(pendingGroups, key = { group -> group.first().scheduledTime }) { group ->
+                    items(pendingGroups, key = { group -> "pending-${group.joinToString("-") { it.id.toString() }}" }) { group ->
                         PendingIntakeCard(
                             entries = group,
                             primaryLabel = strings.markGroupTaken,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
                             onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
                             onStopAlarm = historyViewModel::stopAlarm
                         )
@@ -232,9 +247,9 @@ private fun HeaderCard() {
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(140.dp)
                     .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Fit
             )
         }
     }
@@ -280,13 +295,14 @@ private fun NoDueMedicationCard() {
 private fun PendingIntakeCard(
     entries: List<IntakeHistory>,
     primaryLabel: String,
+    containerColor: Color,
     onTaken: () -> Unit,
     onStopAlarm: () -> Unit
 ) {
     val strings = LocalAppStrings.current
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier
@@ -351,7 +367,7 @@ private fun LowSupplyCard(
     val strings = LocalAppStrings.current
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = Warning.copy(alpha = 0.24f))
     ) {
         Row(
             modifier = Modifier

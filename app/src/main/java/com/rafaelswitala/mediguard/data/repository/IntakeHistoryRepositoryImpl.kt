@@ -56,6 +56,12 @@ class IntakeHistoryRepositoryImpl @Inject constructor(
     override suspend fun getIntakeHistoryById(id: Long): IntakeHistory? =
         intakeHistoryDao.getIntakeHistoryById(id)?.toDomain()
 
+    override suspend fun getIntakeHistoryByNotificationId(notificationId: Int): List<IntakeHistory> =
+        intakeHistoryDao.getIntakeHistoryByNotificationId(notificationId).map { it.toDomain() }
+
+    override suspend fun getExpiredWindows(now: Long): List<IntakeHistory> =
+        intakeHistoryDao.getExpiredWindows(now).map { it.toDomain() }
+
     override fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>> =
         intakeHistoryDao.getIntakeHistoryByMedicationId(medicationId).map { it.map { e -> e.toDomain() } }
 

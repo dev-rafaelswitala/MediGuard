@@ -277,6 +277,14 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        val now = System.currentTimeMillis()
+        val effectiveWindowEnd = windowEnd
+        if (effectiveWindowEnd != null && effectiveWindowEnd <= now) {
+            entryPoint.intakeHistoryRepository().markMissed(historyIds)
+            entryPoint.notificationManager().cancelNotification(notificationId)
+            return
+        }
+
         entryPoint.notificationManager().showMedicationGroupNotification(
             scheduleIds = dueAlarms.map { it.alarmData.scheduleId },
             scheduledTime = scheduledTime,
@@ -286,8 +294,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
         entryPoint.intakeHistoryRepository().setNotificationId(historyIds, notificationId)
 
-        windowEnd?.let { endMillis ->
-            if (endMillis > System.currentTimeMillis()) {
+        effectiveWindowEnd?.let { endMillis ->
+            if (endMillis > now) {
                 entryPoint.alarmScheduler().scheduleWindowEnd(
                     triggerAtMillis = endMillis,
                     historyIds = historyIds,

@@ -32,8 +32,13 @@ class ConfirmMedicationIntakeUseCase @Inject constructor(
         medicationRepository.decrementAfterIntake(history.medicationId)
 
         history.notificationId?.let { notificationId ->
-            alarmScheduler.cancelWindowEnd(notificationId)
-            notificationManager.cancelNotification(notificationId)
+            val hasOpenIntakes = intakeHistoryRepository
+                .getIntakeHistoryByNotificationId(notificationId)
+                .any { it.status == IntakeStatus.PENDING || it.status == IntakeStatus.SNOOZED }
+            if (!hasOpenIntakes) {
+                alarmScheduler.cancelWindowEnd(notificationId)
+                notificationManager.cancelNotification(notificationId)
+            }
         }
     }
 }

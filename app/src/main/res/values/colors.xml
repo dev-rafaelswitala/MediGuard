@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary Colors - Health/Medical theme -->
-    <color name="primary">#FF2196F3</color>
-    <color name="primary_light">#FF64B5F6</color>
-    <color name="primary_dark">#FF0D47A1</color>
+    <color name="primary">#FF00BFA5</color>
+    <color name="primary_light">#FF5FFFE0</color>
+    <color name="primary_dark">#FF006C63</color>
 
     <!-- Secondary Colors -->
-    <color name="secondary">#FF00BCD4</color>
-    <color name="secondary_light">#FF4DD0E1</color>
-    <color name="secondary_dark">#FF00796B</color>
+    <color name="secondary">#FF0B3D4A</color>
+    <color name="secondary_light">#FF2B6C78</color>
+    <color name="secondary_dark">#FF061927</color>
 
     <!-- Accent Colors -->
     <color name="success">#FF4CAF50</color>

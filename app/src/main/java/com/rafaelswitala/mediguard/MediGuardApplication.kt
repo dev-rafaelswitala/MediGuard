@@ -12,6 +12,7 @@ import com.rafaelswitala.mediguard.alarm.AlarmScheduler
 import com.rafaelswitala.mediguard.alarm.DirectBootAlarmScheduler
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
 import com.rafaelswitala.mediguard.domain.repository.MedicationScheduleRepository
+import com.rafaelswitala.mediguard.domain.usecases.MarkExpiredWindowsUseCase
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -51,6 +52,7 @@ class MediGuardApplication : Application() {
                 this,
                 MediGuardApplicationEntryPoint::class.java
             )
+            entryPoint.markExpiredWindowsUseCase()()
             entryPoint.medicationScheduleRepository().getAllActiveSchedules().first().forEach { schedule ->
                 entryPoint.alarmScheduler().scheduleAlarm(schedule)
             }
@@ -69,4 +71,5 @@ class MediGuardApplication : Application() {
 interface MediGuardApplicationEntryPoint {
     fun alarmScheduler(): AlarmScheduler
     fun medicationScheduleRepository(): MedicationScheduleRepository
+    fun markExpiredWindowsUseCase(): MarkExpiredWindowsUseCase
 }

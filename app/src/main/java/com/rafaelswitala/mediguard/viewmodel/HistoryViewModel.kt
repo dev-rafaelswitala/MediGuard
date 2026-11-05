@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rafaelswitala.mediguard.alarm.AlarmRingingService
-import com.rafaelswitala.mediguard.alarm.AlarmScheduler
 import com.rafaelswitala.mediguard.domain.model.IntakeHistory
 import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import com.rafaelswitala.mediguard.domain.model.Medication
@@ -17,7 +16,6 @@ import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.repository.IntakeHistoryRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
 import com.rafaelswitala.mediguard.domain.usecases.ConfirmMedicationIntakeUseCase
-import com.rafaelswitala.mediguard.notification.MedicationNotificationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,9 +30,7 @@ class HistoryViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val intakeHistoryRepository: IntakeHistoryRepository,
     private val medicationRepository: MedicationRepository,
-    private val confirmIntakeUseCase: ConfirmMedicationIntakeUseCase,
-    private val alarmScheduler: AlarmScheduler,
-    private val notificationManager: MedicationNotificationManager
+    private val confirmIntakeUseCase: ConfirmMedicationIntakeUseCase
 ) : ViewModel() {
 
     private val _uiState = mutableStateOf(HistoryUiState())
@@ -129,12 +125,7 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 AlarmRingingService.stop(context)
-                val history = intakeHistoryRepository.getIntakeHistoryById(intakeHistoryId)
                 confirmIntakeUseCase(intakeHistoryId)
-                history?.notificationId?.let { nid ->
-                    alarmScheduler.cancelWindowEnd(nid)
-                    notificationManager.cancelNotification(nid)
-                }
                 _uiState.value = _uiState.value.copy(successMessage = "Intake confirmed")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -149,12 +140,7 @@ class HistoryViewModel @Inject constructor(
             try {
                 AlarmRingingService.stop(context)
                 intakeHistoryIds.forEach { intakeHistoryId ->
-                    val history = intakeHistoryRepository.getIntakeHistoryById(intakeHistoryId)
                     confirmIntakeUseCase(intakeHistoryId)
-                    history?.notificationId?.let { nid ->
-                        alarmScheduler.cancelWindowEnd(nid)
-                        notificationManager.cancelNotification(nid)
-                    }
                 }
                 _uiState.value = _uiState.value.copy(successMessage = "Intake confirmed")
             } catch (e: Exception) {
@@ -174,6 +160,14 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val previous = intakeHistoryRepository.getIntakeHistoryById(intakeHistoryId)
+                if (status == IntakeStatus.CONFIRMED &&
+                    previous?.status != IntakeStatus.CONFIRMED
+                ) {
+                    confirmIntakeUseCase(
+                        intakeHistoryId = intakeHistoryId,
+                        intakeTime = intakeTime ?: System.currentTimeMillis()
+                    )
+                }
                 intakeHistoryRepository.editIntake(
                     intakeHistoryId = intakeHistoryId,
                     status = status,
@@ -181,17 +175,6 @@ class HistoryViewModel @Inject constructor(
                     note = note,
                     wasEditedLate = true
                 )
-                if (status == IntakeStatus.CONFIRMED &&
-                    previous?.status != IntakeStatus.CONFIRMED
-                ) {
-                    previous?.let { medicationRepository.decrementAfterIntake(it.medicationId) }
-                }
-                if (status == IntakeStatus.CONFIRMED) {
-                    previous?.notificationId?.let { nid ->
-                        alarmScheduler.cancelWindowEnd(nid)
-                        notificationManager.cancelNotification(nid)
-                    }
-                }
                 _uiState.value = _uiState.value.copy(successMessage = "Intake updated")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

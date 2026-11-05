@@ -72,8 +72,6 @@ fun MedicationsScreen(
     val strings = LocalAppStrings.current
     val medications by viewModel.activeMedications.collectAsState()
     val allSchedules by viewModel.allActiveSchedules.collectAsState()
-    val viewingMedication by viewModel.editingMedication
-    val viewingSchedules by viewModel.editingSchedules
     val pendingGrouping by viewModel.pendingGroupingCandidate
     var medicationToDelete by remember { mutableStateOf<Medication?>(null) }
     var showDeleteSelectionDialog by remember { mutableStateOf(false) }
@@ -87,9 +85,8 @@ fun MedicationsScreen(
             .mapValues { (_, schedules) -> schedules.mapNotNull { it.intakeGroupId }.firstOrNull() }
     }
 
-    LaunchedEffect(medicationToViewId) {
-        viewModel.loadMedicationForEdit(medicationToViewId)
-    }
+    val viewingMedication = medications.firstOrNull { it.id == medicationToViewId }
+    val viewingSchedules = allSchedules.filter { it.medicationId == medicationToViewId }
 
     LaunchedEffect(medications) {
         val currentIds = medications.map { it.id }.toSet()
@@ -223,6 +220,7 @@ fun MedicationsScreen(
             onDismiss = { medicationToViewId = null },
             onEdit = { medication ->
                 medicationToViewId = null
+                viewModel.loadMedicationForEdit(medication.id)
                 onNavigateToEdit(medication.id)
             }
         )

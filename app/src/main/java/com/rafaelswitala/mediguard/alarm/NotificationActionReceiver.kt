@@ -73,6 +73,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             scheduleIds.minOrNull()?.toInt() ?: 0
         )
 
+        alarmScheduler.cancelWindowEnd(notificationId)
         historyIds.forEach { historyId ->
             intakeHistoryRepository.updateIntakeStatus(historyId, IntakeStatus.SNOOZED.name, null)
         }

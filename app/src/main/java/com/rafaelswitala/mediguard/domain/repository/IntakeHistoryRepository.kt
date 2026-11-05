@@ -18,6 +18,8 @@ interface IntakeHistoryRepository {
     suspend fun markMissed(ids: List<Long>)
     suspend fun setNotificationId(ids: List<Long>, notificationId: Int)
     suspend fun getIntakeHistoryById(id: Long): IntakeHistory?
+    suspend fun getIntakeHistoryByNotificationId(notificationId: Int): List<IntakeHistory>
+    suspend fun getExpiredWindows(now: Long): List<IntakeHistory>
     fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>>
     fun getAllIntakeHistory(): Flow<List<IntakeHistory>>
     fun getIntakeHistoryInRange(from: Long, to: Long): Flow<List<IntakeHistory>>

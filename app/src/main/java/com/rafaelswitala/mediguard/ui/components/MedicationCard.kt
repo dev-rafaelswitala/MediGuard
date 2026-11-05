@@ -49,7 +49,6 @@ fun MedicationCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
             .combinedClickable(
                 onClick = {
                     if (selectionMode) {
@@ -96,7 +95,7 @@ fun MedicationCard(
             ) {
                 Text(
                     text = medication.name,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(

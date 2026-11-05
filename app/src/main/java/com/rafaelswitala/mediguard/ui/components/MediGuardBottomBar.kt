@@ -7,7 +7,6 @@ package com.rafaelswitala.mediguard.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -46,7 +45,7 @@ fun MediGuardBottomBar(
         NavigationBarItem(
             selected = selected == MediGuardTab.MEDICATIONS,
             onClick = onMedications,
-            icon = { Icon(Icons.Default.Favorite, contentDescription = strings.medications) },
+            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = strings.medications) },
             label = { Text(strings.medications) }
         )
         NavigationBarItem(
@@ -64,8 +63,8 @@ fun MediGuardBottomBar(
         NavigationBarItem(
             selected = selected == MediGuardTab.MORE,
             onClick = onMore,
-            icon = { Icon(Icons.Default.Settings, contentDescription = strings.more) },
-            label = { Text(strings.more) }
+            icon = { Icon(Icons.Default.Settings, contentDescription = strings.settings) },
+            label = { Text(strings.settings) }
         )
     }
 }

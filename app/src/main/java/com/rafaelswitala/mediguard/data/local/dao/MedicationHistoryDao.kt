@@ -26,6 +26,19 @@ interface IntakeHistoryDao {
     @Query("SELECT * FROM intake_history WHERE id = :id")
     suspend fun getIntakeHistoryById(id: Long): IntakeHistoryEntity?
 
+    @Query("SELECT * FROM intake_history WHERE notificationId = :notificationId")
+    suspend fun getIntakeHistoryByNotificationId(notificationId: Int): List<IntakeHistoryEntity>
+
+    @Query(
+        """
+        SELECT * FROM intake_history
+        WHERE status IN ('PENDING', 'SNOOZED')
+          AND windowEndTime IS NOT NULL
+          AND windowEndTime < :now
+        """
+    )
+    suspend fun getExpiredWindows(now: Long): List<IntakeHistoryEntity>
+
     @Query("SELECT * FROM intake_history WHERE medicationId = :medicationId ORDER BY scheduledTime DESC")
     fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistoryEntity>>
 

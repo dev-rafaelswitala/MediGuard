@@ -9,8 +9,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
+import com.rafaelswitala.mediguard.data.settings.DayPeriodSettingsProvider
 import com.rafaelswitala.mediguard.domain.model.IntakeHistory
 import com.rafaelswitala.mediguard.domain.model.IntakeStatus
+import com.rafaelswitala.mediguard.domain.reminder.ReminderPlanFactory
 import com.rafaelswitala.mediguard.domain.repository.IntakeHistoryRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationScheduleRepository
@@ -97,40 +99,76 @@ class BootReceiver : BroadcastReceiver() {
         directBootAlarmStore: DirectBootAlarmStore,
         entryPoint: BootReceiverEntryPoint
     ) {
+        val daySettings = entryPoint.dayPeriodSettingsProvider().current()
         directBootAlarmStore.getPendingLockedAlarms()
             .first()
             .forEach { pendingAlarm ->
-                val items = pendingAlarm.scheduleIds.mapNotNull { scheduleId ->
+                val restored = pendingAlarm.scheduleIds.mapNotNull { scheduleId ->
                     val alarmData = directBootAlarmStore.getAlarmSchedule(scheduleId)
                         ?: return@mapNotNull null
                     val medication = entryPoint.medicationRepository().getMedicationById(alarmData.medicationId)
                         ?: return@mapNotNull null
+                    val schedule = entryPoint.medicationScheduleRepository().getScheduleById(scheduleId)
+                    val windowEnd = schedule?.let {
+                        ReminderPlanFactory.windowEndMillis(
+                            schedule = it,
+                            scheduledStartMillis = pendingAlarm.scheduledTime,
+                            dayPeriodSettings = daySettings
+                        )
+                    }
                     val historyId = entryPoint.intakeHistoryRepository().recordIntake(
                         IntakeHistory(
                             medicationId = medication.id,
+                            scheduleId = scheduleId,
                             scheduledTime = pendingAlarm.scheduledTime,
+                            windowEndTime = windowEnd,
                             dosage = medication.dosage,
                             dosageUnit = medication.dosageUnit,
                             medicationName = medication.name,
-                            status = IntakeStatus.PENDING
+                            status = IntakeStatus.PENDING,
+                            notificationId = pendingAlarm.notificationId.toInt()
                         )
                     )
-                    ReminderNotificationItem(
-                        medicationId = medication.id,
+                    RestoredReminder(
                         historyId = historyId,
-                        medicationName = medication.name,
-                        dosage = medication.dosage,
-                        dosageUnit = medication.dosageUnit
+                        windowEnd = windowEnd,
+                        item = ReminderNotificationItem(
+                            medicationId = medication.id,
+                            historyId = historyId,
+                            medicationName = medication.name,
+                            dosage = medication.dosage,
+                            dosageUnit = medication.dosageUnit
+                        )
                     )
                 }
 
-                if (items.isNotEmpty()) {
+                val notificationId = pendingAlarm.notificationId.toInt()
+                val historyIds = restored.map { it.historyId }
+                entryPoint.intakeHistoryRepository().setNotificationId(historyIds, notificationId)
+
+                val now = System.currentTimeMillis()
+                val expiredIds = restored
+                    .filter { it.windowEnd != null && it.windowEnd <= now }
+                    .map { it.historyId }
+                entryPoint.intakeHistoryRepository().markMissed(expiredIds)
+
+                val active = restored.filter { it.historyId !in expiredIds }
+                if (active.isNotEmpty()) {
                     entryPoint.notificationManager().showMedicationGroupNotification(
                         scheduleIds = pendingAlarm.scheduleIds,
                         scheduledTime = pendingAlarm.scheduledTime,
-                        items = items,
-                        notificationId = pendingAlarm.notificationId.toInt()
+                        items = active.map { it.item },
+                        notificationId = notificationId
                     )
+                    active.mapNotNull { it.windowEnd }.minOrNull()?.let { end ->
+                        entryPoint.alarmScheduler().scheduleWindowEnd(
+                            triggerAtMillis = end,
+                            historyIds = active.map { it.historyId },
+                            notificationId = notificationId
+                        )
+                    }
+                } else {
+                    entryPoint.notificationManager().cancelNotification(notificationId)
                 }
                 directBootAlarmStore.removePendingLockedAlarm(pendingAlarm.notificationId)
             }
@@ -151,4 +189,11 @@ interface BootReceiverEntryPoint {
     fun medicationRepository(): MedicationRepository
     fun intakeHistoryRepository(): IntakeHistoryRepository
     fun notificationManager(): MedicationNotificationManager
+    fun dayPeriodSettingsProvider(): DayPeriodSettingsProvider
 }
+
+private data class RestoredReminder(
+    val historyId: Long,
+    val windowEnd: Long?,
+    val item: ReminderNotificationItem
+)
