@@ -70,7 +70,10 @@ class MedicationScheduleRepositoryImpl @Inject constructor(
         scheduleDao.deleteSchedulesByMedicationId(medicationId)
     }
 
-    // Mapping functions
+    override suspend fun updateIntakeGroup(scheduleId: Long, groupId: Int?) {
+        scheduleDao.updateIntakeGroup(scheduleId, groupId)
+    }
+
     private fun MedicationSchedule.toEntity(): MedicationScheduleEntity = MedicationScheduleEntity(
         id = id,
         medicationId = medicationId,
@@ -79,6 +82,7 @@ class MedicationScheduleRepositoryImpl @Inject constructor(
         reminderMinutes = reminderMinutes,
         snoozeOptions = snoozeOptions.joinToString(","),
         isEnabled = isEnabled,
+        intakeGroupId = intakeGroupId,
         createdAt = createdAt
     )
 
@@ -95,6 +99,7 @@ class MedicationScheduleRepositoryImpl @Inject constructor(
             reminderMinutes = reminderMinutes,
             snoozeOptions = snoozeOptions.split(",").mapNotNull { it.toIntOrNull() },
             isEnabled = isEnabled,
+            intakeGroupId = intakeGroupId,
             createdAt = createdAt
         )
     }

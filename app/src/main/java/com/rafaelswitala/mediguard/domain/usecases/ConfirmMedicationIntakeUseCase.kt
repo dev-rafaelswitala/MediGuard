@@ -4,14 +4,18 @@ package com.rafaelswitala.mediguard.domain.usecases
  * Bestätigt die Einnahme eines Medikaments und verringert den Bestand.
  */
 
+import com.rafaelswitala.mediguard.alarm.AlarmScheduler
 import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import com.rafaelswitala.mediguard.domain.repository.IntakeHistoryRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
+import com.rafaelswitala.mediguard.notification.MedicationNotificationManager
 import javax.inject.Inject
 
 class ConfirmMedicationIntakeUseCase @Inject constructor(
     private val intakeHistoryRepository: IntakeHistoryRepository,
-    private val medicationRepository: MedicationRepository
+    private val medicationRepository: MedicationRepository,
+    private val alarmScheduler: AlarmScheduler,
+    private val notificationManager: MedicationNotificationManager
 ) {
     suspend operator fun invoke(
         intakeHistoryId: Long,
@@ -26,5 +30,10 @@ class ConfirmMedicationIntakeUseCase @Inject constructor(
             intakeTime
         )
         medicationRepository.decrementAfterIntake(history.medicationId)
+
+        history.notificationId?.let { notificationId ->
+            alarmScheduler.cancelWindowEnd(notificationId)
+            notificationManager.cancelNotification(notificationId)
+        }
     }
 }

@@ -13,9 +13,11 @@ import com.rafaelswitala.mediguard.data.local.dao.MedicationScheduleDao
 import com.rafaelswitala.mediguard.data.repository.IntakeHistoryRepositoryImpl
 import com.rafaelswitala.mediguard.data.repository.MedicationRepositoryImpl
 import com.rafaelswitala.mediguard.data.repository.MedicationScheduleRepositoryImpl
+import com.rafaelswitala.mediguard.data.repository.ProfileRepositoryImpl
 import com.rafaelswitala.mediguard.domain.repository.IntakeHistoryRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationScheduleRepository
+import com.rafaelswitala.mediguard.domain.repository.ProfileRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -91,6 +93,7 @@ object AppModule {
             MIGRATION_4_5,
             MIGRATION_5_6
         )
+        .fallbackToDestructiveMigration()
         .build()
 
     @Provides
@@ -110,6 +113,22 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideHealthProfileDao(database: AppDatabase) = database.healthProfileDao()
+
+    @Provides
+    @Singleton
+    fun provideHealthAllergyDao(database: AppDatabase) = database.healthAllergyDao()
+
+    @Provides
+    @Singleton
+    fun provideHealthContactDao(database: AppDatabase) = database.healthContactDao()
+
+    @Provides
+    @Singleton
+    fun provideMedicalDocumentDao(database: AppDatabase) = database.medicalDocumentDao()
+
+    @Provides
+    @Singleton
     fun provideMedicationRepository(
         medicationDao: MedicationDao
     ): MedicationRepository = MedicationRepositoryImpl(medicationDao)
@@ -125,6 +144,12 @@ object AppModule {
     fun provideIntakeHistoryRepository(
         intakeHistoryDao: IntakeHistoryDao
     ): IntakeHistoryRepository = IntakeHistoryRepositoryImpl(intakeHistoryDao)
+
+    @Provides
+    @Singleton
+    fun provideProfileRepository(
+        impl: ProfileRepositoryImpl
+    ): ProfileRepository = impl
 
     @Provides
     @Singleton

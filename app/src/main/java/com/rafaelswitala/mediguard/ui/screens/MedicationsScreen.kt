@@ -16,22 +16,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,11 +65,13 @@ fun MedicationsScreen(
     onNavigateToAdd: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {},
     onNavigateSettings: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
     val medications by viewModel.activeMedications.collectAsState()
+    val allSchedules by viewModel.allActiveSchedules.collectAsState()
     val viewingMedication by viewModel.editingMedication
     val viewingSchedules by viewModel.editingSchedules
     val pendingGrouping by viewModel.pendingGroupingCandidate
@@ -85,6 +81,11 @@ fun MedicationsScreen(
     val selectedMedicationIds = remember { mutableStateListOf<Long>() }
     val selectionMode = selectedMedicationIds.isNotEmpty()
     val selectedMedications = medications.filter { it.id in selectedMedicationIds }
+    val firstScheduleGroupByMed = remember(allSchedules) {
+        allSchedules
+            .groupBy { it.medicationId }
+            .mapValues { (_, schedules) -> schedules.mapNotNull { it.intakeGroupId }.firstOrNull() }
+    }
 
     LaunchedEffect(medicationToViewId) {
         viewModel.loadMedicationForEdit(medicationToViewId)
@@ -143,32 +144,14 @@ fun MedicationsScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateHome,
-                    icon = { Icon(Icons.Default.Home, contentDescription = strings.home) },
-                    label = { Text(strings.home) }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Favorite, contentDescription = strings.medications) },
-                    label = { Text(strings.medications) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateHistory,
-                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = strings.history) },
-                    label = { Text(strings.history) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateSettings,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = strings.settings) },
-                    label = { Text(strings.settings) }
-                )
-            }
+            com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar(
+                selected = com.rafaelswitala.mediguard.ui.components.MediGuardTab.MEDICATIONS,
+                onHome = onNavigateHome,
+                onMedications = {},
+                onHistory = onNavigateHistory,
+                onProfile = onNavigateProfile,
+                onMore = onNavigateSettings
+            )
         }
     ) { innerPadding ->
         Box(
@@ -187,6 +170,7 @@ fun MedicationsScreen(
                     items(medications, key = { it.id }) { medication ->
                         MedicationCard(
                             medication = medication,
+                            scheduleGroupId = firstScheduleGroupByMed[medication.id],
                             onView = { medicationToViewId = medication.id },
                             onLongPress = { id ->
                                 if (id !in selectedMedicationIds) {
@@ -474,6 +458,12 @@ private fun formatSchedule(
             "${strings.weekly}: ${
                 ScheduleDataCodec.readDays(schedule.scheduleData).joinToString(", ") { it.label(language) }
             } ${formatScheduleTime(hour, minute)}"
+        }
+        FrequencyType.ONE_SHOT -> {
+            val trigger = ScheduleDataCodec.readLong(schedule.scheduleData, "triggerAtMillis", 0L)
+            val formatted = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+                .format(java.util.Date(trigger))
+            "${strings.planOneShot}: $formatted"
         }
     }
 

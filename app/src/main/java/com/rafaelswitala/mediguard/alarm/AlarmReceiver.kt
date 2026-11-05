@@ -9,11 +9,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
+import com.rafaelswitala.mediguard.data.settings.DayPeriodSettingsProvider
 import com.rafaelswitala.mediguard.domain.model.IntakeHistory
 import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import com.rafaelswitala.mediguard.domain.model.Medication
+import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
+import com.rafaelswitala.mediguard.domain.reminder.ReminderPlanFactory
 import com.rafaelswitala.mediguard.domain.repository.IntakeHistoryRepository
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
+import com.rafaelswitala.mediguard.domain.repository.MedicationScheduleRepository
 import com.rafaelswitala.mediguard.notification.MedicationNotificationManager
 import com.rafaelswitala.mediguard.notification.ReminderNotificationItem
 import dagger.hilt.EntryPoint
@@ -28,8 +32,7 @@ import kotlin.math.abs
 
 /**
  * Receives reminder alarm broadcasts.
- * Recurring alarms are grouped only when the due medications share an explicit
- * medication group.
+ * Recurring alarms are grouped by schedule.intakeGroupId (slot-level).
  */
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -47,7 +50,30 @@ class AlarmReceiver : BroadcastReceiver() {
     private suspend fun handleAlarm(context: Context, intent: Intent) {
         when (intent.action) {
             ReminderActions.ACTION_ONE_TIME_REMINDER -> handleOneTimeReminder(context, intent)
+            ReminderActions.ACTION_WINDOW_END -> handleWindowEnd(context, intent)
             else -> handleRecurringReminder(context, intent)
+        }
+    }
+
+    private suspend fun handleWindowEnd(context: Context, intent: Intent) {
+        val historyIds = ReminderActions.idsFromCsv(
+            intent.getStringExtra(ReminderActions.EXTRA_HISTORY_IDS)
+        )
+        val notificationId = intent.getIntExtra(ReminderActions.EXTRA_NOTIFICATION_ID, 0)
+        if (historyIds.isEmpty()) return
+
+        val entryPoint = entryPoint(context)
+        val toMiss = historyIds.mapNotNull { id ->
+            entryPoint.intakeHistoryRepository().getIntakeHistoryById(id)
+        }.filter {
+            it.status == IntakeStatus.PENDING || it.status == IntakeStatus.SNOOZED
+        }.map { it.id }
+
+        if (toMiss.isNotEmpty()) {
+            entryPoint.intakeHistoryRepository().markMissed(toMiss)
+        }
+        if (notificationId != 0) {
+            entryPoint.notificationManager().cancelNotification(notificationId)
         }
     }
 
@@ -113,15 +139,16 @@ class AlarmReceiver : BroadcastReceiver() {
             val dueMedicationAlarms = dueAlarms.mapNotNull { alarmData ->
                 val medication = entryPoint.medicationRepository().getMedicationById(alarmData.medicationId)
                     ?: return@mapNotNull null
-                DueMedicationAlarm(alarmData, medication)
+                val schedule = entryPoint.scheduleRepository().getScheduleById(alarmData.scheduleId)
+                DueMedicationAlarm(alarmData, medication, schedule)
             }
             val currentAlarm = dueMedicationAlarms.firstOrNull { it.alarmData.scheduleId == scheduleId }
                 ?: return
-            val currentGroup = currentAlarm.medication.intakeGroupId
+            val currentGroup = currentAlarm.schedule?.intakeGroupId
             val notificationAlarms = if (currentGroup == null) {
                 listOf(currentAlarm)
             } else {
-                dueMedicationAlarms.filter { it.medication.intakeGroupId == currentGroup }
+                dueMedicationAlarms.filter { it.schedule?.intakeGroupId == currentGroup }
             }
 
             val leaderScheduleId = notificationAlarms.minOf { it.alarmData.scheduleId }
@@ -207,18 +234,34 @@ class AlarmReceiver : BroadcastReceiver() {
         scheduledTime: Long,
         notificationId: Int
     ) {
+        val daySettings = entryPoint.dayPeriodSettingsProvider().current()
+        val historyIds = mutableListOf<Long>()
+        var windowEnd: Long? = null
+
         val items = dueAlarms.map { dueMedicationAlarm ->
             val medication = dueMedicationAlarm.medication
+            val schedule = dueMedicationAlarm.schedule
+            val scheduleWindowEnd = schedule?.let {
+                ReminderPlanFactory.windowEndMillis(it, scheduledTime, daySettings)
+            }
+            if (scheduleWindowEnd != null) {
+                windowEnd = listOfNotNull(windowEnd, scheduleWindowEnd).minOrNull()
+            }
+
             val historyId = entryPoint.intakeHistoryRepository().recordIntake(
                 IntakeHistory(
                     medicationId = medication.id,
+                    scheduleId = schedule?.id ?: dueMedicationAlarm.alarmData.scheduleId,
                     scheduledTime = scheduledTime,
+                    windowEndTime = scheduleWindowEnd,
                     dosage = medication.dosage,
                     dosageUnit = medication.dosageUnit,
                     medicationName = medication.name,
-                    status = IntakeStatus.PENDING
+                    status = IntakeStatus.PENDING,
+                    notificationId = notificationId
                 )
             )
+            historyIds += historyId
 
             ReminderNotificationItem(
                 medicationId = medication.id,
@@ -240,6 +283,18 @@ class AlarmReceiver : BroadcastReceiver() {
             items = items,
             notificationId = notificationId
         )
+
+        entryPoint.intakeHistoryRepository().setNotificationId(historyIds, notificationId)
+
+        windowEnd?.let { endMillis ->
+            if (endMillis > System.currentTimeMillis()) {
+                entryPoint.alarmScheduler().scheduleWindowEnd(
+                    triggerAtMillis = endMillis,
+                    historyIds = historyIds,
+                    notificationId = notificationId
+                )
+            }
+        }
     }
 
     private fun entryPoint(context: Context): AlarmReceiverEntryPoint =
@@ -261,7 +316,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
 private data class DueMedicationAlarm(
     val alarmData: DirectBootAlarmStore.AlarmScheduleData,
-    val medication: Medication
+    val medication: Medication,
+    val schedule: MedicationSchedule?
 )
 
 @EntryPoint
@@ -269,6 +325,8 @@ private data class DueMedicationAlarm(
 interface AlarmReceiverEntryPoint {
     fun alarmScheduler(): AlarmScheduler
     fun medicationRepository(): MedicationRepository
+    fun scheduleRepository(): MedicationScheduleRepository
     fun intakeHistoryRepository(): IntakeHistoryRepository
     fun notificationManager(): MedicationNotificationManager
+    fun dayPeriodSettingsProvider(): DayPeriodSettingsProvider
 }

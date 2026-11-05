@@ -8,6 +8,7 @@ import com.rafaelswitala.mediguard.data.local.dao.MedicationDao
 import com.rafaelswitala.mediguard.data.local.entity.MedicationEntity
 import com.rafaelswitala.mediguard.domain.model.Medication
 import com.rafaelswitala.mediguard.domain.model.MedicationFormType
+import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.model.TreatmentType
 import com.rafaelswitala.mediguard.domain.repository.MedicationRepository
 import kotlinx.coroutines.flow.Flow
@@ -96,6 +97,7 @@ class MedicationRepositoryImpl @Inject constructor(
         dosageUnit = dosageUnit,
         description = description,
         treatmentType = treatmentType.name,
+        planType = planType.name,
         durationDays = durationDays,
         treatmentLimitDoses = treatmentLimitDoses,
         remainingDoses = remainingDoses?.takeIf { it.rem(1.0) == 0.0 }?.toInt(),
@@ -121,6 +123,8 @@ class MedicationRepositoryImpl @Inject constructor(
         description = description,
         treatmentType = runCatching { TreatmentType.valueOf(treatmentType) }
             .getOrDefault(TreatmentType.ONGOING),
+        planType = runCatching { MedicationPlanType.valueOf(planType) }
+            .getOrDefault(MedicationPlanType.RECURRING),
         durationDays = durationDays,
         treatmentLimitDoses = treatmentLimitDoses,
         remainingDoses = remainingDosesDecimal ?: remainingDoses?.toDouble(),

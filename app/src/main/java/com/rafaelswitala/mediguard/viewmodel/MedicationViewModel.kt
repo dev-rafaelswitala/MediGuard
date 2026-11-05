@@ -13,6 +13,7 @@ import com.rafaelswitala.mediguard.data.settings.DayPeriodSettingsProvider
 import com.rafaelswitala.mediguard.domain.grouping.GroupingCandidate
 import com.rafaelswitala.mediguard.domain.grouping.MedicationGroupingService
 import com.rafaelswitala.mediguard.domain.model.Medication
+import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
 import com.rafaelswitala.mediguard.domain.reminder.NextIntakeCalculator
 import com.rafaelswitala.mediguard.domain.reminder.UpcomingIntake
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 /**
  * Datei für Medikamentenlisten, Bestand und Gruppierung.
@@ -72,6 +74,14 @@ class MedicationViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val allActiveSchedules: StateFlow<List<MedicationSchedule>> = scheduleRepository
+        .getAllActiveSchedules()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val lowSupplyMedications: StateFlow<List<Medication>> = medicationRepository
         .getAllActiveMedications()
         .map { medications -> medications.filter { it.needsSupplyRestock() } }
@@ -105,9 +115,9 @@ class MedicationViewModel @Inject constructor(
                 scheduleRepository.getAllActiveSchedules()
             ) { meds, schedules -> meds to schedules }
                 .collect { (meds, schedules) ->
-                runGroupCleanup(meds)
-                expandExistingGroups(meds, schedules.groupBy { it.medicationId })
-            }
+                    runGroupCleanup(schedules)
+                    expandExistingGroups(meds, schedules)
+                }
         }
     }
 
@@ -119,13 +129,17 @@ class MedicationViewModel @Inject constructor(
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
                 val medicationId = addMedicationUseCase(medication)
-                persistSchedules(medicationId, scheduleDrafts)
+                if (medication.planType != MedicationPlanType.PRN) {
+                    persistSchedules(medicationId, scheduleDrafts)
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     successMessage = "Medication and reminders saved",
                     lastAddedMedicationId = medicationId
                 )
-                detectGroupingCandidate(medicationId)
+                if (medication.planType == MedicationPlanType.RECURRING) {
+                    detectGroupingCandidate(medicationId)
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -147,12 +161,16 @@ class MedicationViewModel @Inject constructor(
                     .first()
                     .forEach { alarmScheduler.cancelAlarm(it.id) }
                 scheduleRepository.deleteSchedulesByMedicationId(medication.id)
-                persistSchedules(medication.id, scheduleDrafts)
+                if (medication.planType != MedicationPlanType.PRN) {
+                    persistSchedules(medication.id, scheduleDrafts)
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     successMessage = "Medication updated"
                 )
-                detectGroupingCandidate(medication.id)
+                if (medication.planType == MedicationPlanType.RECURRING) {
+                    detectGroupingCandidate(medication.id)
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -189,7 +207,7 @@ class MedicationViewModel @Inject constructor(
                     medicationRepository.deleteMedication(medicationId)
                 }
                 _uiState.value = _uiState.value.copy(successMessage = "Medication deleted")
-                runGroupCleanup(activeMedications.value)
+                runGroupCleanup(scheduleRepository.getAllActiveSchedules().first())
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "Failed to delete medication: ${e.message}"
@@ -216,25 +234,24 @@ class MedicationViewModel @Inject constructor(
         }
     }
 
-    fun confirmGrouping(
-        candidate: GroupingCandidate
-    ) {
+    fun confirmGrouping(candidate: GroupingCandidate) {
         viewModelScope.launch {
             val medications = activeMedications.value
             val schedules = scheduleRepository.getAllActiveSchedules().first()
-            val connectedMedicationIds = connectedMedicationIds(
+            val schedulesByMedication = schedules.groupBy { it.medicationId }
+            val connectedScheduleIds = connectedScheduleIds(
                 root = candidate,
                 medications = medications,
-                schedulesByMedication = schedules.groupBy { it.medicationId }
+                schedulesByMedication = schedulesByMedication
             )
-            val groupId = medications
-                .filter { it.id in connectedMedicationIds }
+            val groupId = schedules
+                .filter { it.id in connectedScheduleIds }
                 .mapNotNull { it.intakeGroupId }
                 .firstOrNull()
-                ?: MedicationGroupingService.nextAvailableGroupId(medications)
+                ?: MedicationGroupingService.nextAvailableGroupId(schedules)
 
-            connectedMedicationIds.forEach { medId ->
-                medicationRepository.updateIntakeGroup(medId, groupId)
+            connectedScheduleIds.forEach { scheduleId ->
+                scheduleRepository.updateIntakeGroup(scheduleId, groupId)
             }
             _pendingGroupingCandidate.value = null
         }
@@ -268,48 +285,56 @@ class MedicationViewModel @Inject constructor(
         _pendingGroupingCandidate.value = candidates.firstOrNull()
     }
 
-    private suspend fun runGroupCleanup(medications: List<Medication>) {
-        MedicationGroupingService.cleanupGroups(medications).forEach { (id, groupId) ->
-            medicationRepository.updateIntakeGroup(id, groupId)
+    private suspend fun runGroupCleanup(schedules: List<MedicationSchedule>) {
+        MedicationGroupingService.cleanupGroups(schedules).forEach { (id, groupId) ->
+            scheduleRepository.updateIntakeGroup(id, groupId)
         }
     }
 
     private suspend fun expandExistingGroups(
         medications: List<Medication>,
-        schedulesByMedication: Map<Long, List<MedicationSchedule>>
+        schedules: List<MedicationSchedule>
     ) {
-        val mutableGroups = medications.associate { it.id to it.intakeGroupId }.toMutableMap()
+        val schedulesByMedication = schedules.groupBy { it.medicationId }
+        val mutableGroups = schedules.associate { it.id to it.intakeGroupId }.toMutableMap()
         MedicationGroupingService.findCandidates(medications, schedulesByMedication).forEach { candidate ->
-            val groupA = mutableGroups[candidate.medicationA.id]
-            val groupB = mutableGroups[candidate.medicationB.id]
+            val groupA = mutableGroups[candidate.scheduleA.id]
+            val groupB = mutableGroups[candidate.scheduleB.id]
             when {
-                groupA != null && groupB == null -> mutableGroups[candidate.medicationB.id] = groupA
-                groupB != null && groupA == null -> mutableGroups[candidate.medicationA.id] = groupB
+                groupA != null && groupB == null -> mutableGroups[candidate.scheduleB.id] = groupA
+                groupB != null && groupA == null -> mutableGroups[candidate.scheduleA.id] = groupB
                 groupA != null && groupB != null && groupA != groupB -> {
                     mutableGroups.replaceAll { _, groupId -> if (groupId == groupB) groupA else groupId }
                 }
             }
         }
-        mutableGroups.forEach { (medicationId, groupId) ->
-            val current = medications.firstOrNull { it.id == medicationId }?.intakeGroupId
+        mutableGroups.forEach { (scheduleId, groupId) ->
+            val current = schedules.firstOrNull { it.id == scheduleId }?.intakeGroupId
             if (current != groupId) {
-                medicationRepository.updateIntakeGroup(medicationId, groupId)
+                scheduleRepository.updateIntakeGroup(scheduleId, groupId)
             }
         }
     }
 
-    private fun connectedMedicationIds(
+    private fun connectedScheduleIds(
         root: GroupingCandidate,
         medications: List<Medication>,
         schedulesByMedication: Map<Long, List<MedicationSchedule>>
     ): Set<Long> {
+        val rootMinutes = setOf(root.minutesA, root.minutesB)
         val candidates = MedicationGroupingService.findCandidates(medications, schedulesByMedication)
-        val connected = mutableSetOf(root.medicationA.id, root.medicationB.id)
+            .filter { candidate ->
+                rootMinutes.any { rootMin ->
+                    abs(candidate.minutesA - rootMin) <= MedicationGroupingService.MAX_MINUTE_DIFF ||
+                        abs(candidate.minutesB - rootMin) <= MedicationGroupingService.MAX_MINUTE_DIFF
+                }
+            }
+        val connected = mutableSetOf(root.scheduleA.id, root.scheduleB.id)
         var changed: Boolean
         do {
             changed = false
             candidates.forEach { candidate ->
-                val ids = setOf(candidate.medicationA.id, candidate.medicationB.id)
+                val ids = setOf(candidate.scheduleA.id, candidate.scheduleB.id)
                 if (ids.any { it in connected } && connected.addAll(ids)) {
                     changed = true
                 }

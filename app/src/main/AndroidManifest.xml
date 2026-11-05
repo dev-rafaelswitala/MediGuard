@@ -2,6 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Anforderungen MVP -->
+
+    <!-- Direct Boot Support -->
+    <!-- Zwei Speicherbereiche (Credential Encrypted & Device Encrypted) -->
+    <!-- AlarmManager mit Notifications -->
+    <!-- Sicherheits-Logik: Vor erstem Entsperren: Zeit für Ihre Medikamente -->
+    <!-- Sicherheits-Logik: Nach Entsperren: CE-Bereich offen, Detaillierte Anweisung -->
+    <!-- Eingabemaske mit Name, Dosierung und Uhrzeit -->
+    <!-- Status-Check: App Erkennt dass Gerät neu gestartet ist -->
+    <!-- Historie bzw. Logbuch -->
+
+
     <!-- Permissions for alarms and notifications -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -67,6 +79,16 @@
             android:name=".alarm.RescheduleReminderActivity"
             android:exported="false"
             android:theme="@style/Theme.MediGuard.Dialog" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

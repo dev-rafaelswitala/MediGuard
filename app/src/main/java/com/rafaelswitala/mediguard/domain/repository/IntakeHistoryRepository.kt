@@ -1,18 +1,22 @@
 package com.rafaelswitala.mediguard.domain.repository
 
-/**
- * Repository für Einnahmeverlauf: Speichert und verwaltet alle Einnahmebestätigungen.
- */
-
 import com.rafaelswitala.mediguard.domain.model.IntakeHistory
+import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Repository interface for IntakeHistory operations
- */
 interface IntakeHistoryRepository {
     suspend fun recordIntake(intakeHistory: IntakeHistory): Long
     suspend fun updateIntakeStatus(intakeHistoryId: Long, status: String, intakeTime: Long?)
+    suspend fun updateIntakeDetails(intakeHistory: IntakeHistory)
+    suspend fun editIntake(
+        intakeHistoryId: Long,
+        status: IntakeStatus,
+        intakeTime: Long?,
+        note: String?,
+        wasEditedLate: Boolean
+    )
+    suspend fun markMissed(ids: List<Long>)
+    suspend fun setNotificationId(ids: List<Long>, notificationId: Int)
     suspend fun getIntakeHistoryById(id: Long): IntakeHistory?
     fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>>
     fun getAllIntakeHistory(): Flow<List<IntakeHistory>>

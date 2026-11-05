@@ -26,10 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,8 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -77,7 +71,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateHome: () -> Unit = {},
     onNavigateMedications: () -> Unit = {},
-    onNavigateHistory: () -> Unit = {}
+    onNavigateHistory: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
     val settings by viewModel.settings.collectAsState()
@@ -119,32 +114,14 @@ fun SettingsScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateHome,
-                    icon = { Icon(Icons.Default.Home, contentDescription = strings.home) },
-                    label = { Text(strings.home) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateMedications,
-                    icon = { Icon(Icons.Default.Favorite, contentDescription = strings.medications) },
-                    label = { Text(strings.medications) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateHistory,
-                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = strings.history) },
-                    label = { Text(strings.history) }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Settings, contentDescription = strings.settings) },
-                    label = { Text(strings.settings) }
-                )
-            }
+            com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar(
+                selected = com.rafaelswitala.mediguard.ui.components.MediGuardTab.MORE,
+                onHome = onNavigateHome,
+                onMedications = onNavigateMedications,
+                onHistory = onNavigateHistory,
+                onProfile = onNavigateProfile,
+                onMore = {}
+            )
         }
     ) { innerPadding ->
         Column(

@@ -6,8 +6,8 @@ import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
 import com.rafaelswitala.mediguard.domain.model.ScheduleDataCodec
 
 /**
- * Datei für die Gruppierungslogik.
- * Erkennt Einnahmen, die zeitlich nah beieinander liegen und gemeinsam erinnert werden können.
+ * Slot-basierte Gruppierung: ein Medikament mit mehreren Uhrzeiten kann in
+ * unterschiedlichen Gruppen landen (C@X und C@Y getrennt).
  */
 data class ScheduleSignature(
     val frequencyType: FrequencyType,
@@ -56,6 +56,7 @@ object MedicationGroupingService {
                 val period = ScheduleDataCodec.readPeriod(schedule.scheduleData)
                 listOf(period.preferredHour() * 60)
             }
+            FrequencyType.ONE_SHOT -> emptyList()
         }
         return ScheduleSignature(schedule.scheduleType, dayMask, triggerMinutes)
     }
@@ -64,6 +65,7 @@ object MedicationGroupingService {
         if (sigA.frequencyType != sigB.frequencyType) return false
         return when (sigA.frequencyType) {
             FrequencyType.WEEKLY -> sigA.dayMask == sigB.dayMask && sigA.dayMask != 0
+            FrequencyType.ONE_SHOT -> false
             else -> true
         }
     }
@@ -78,11 +80,16 @@ object MedicationGroupingService {
         }.distinctBy { (a, b) -> minOf(a.id, b.id) to maxOf(a.id, b.id) }
 
         pairs.forEach { (medA, medB) ->
-            if (medA.intakeGroupId != null && medA.intakeGroupId == medB.intakeGroupId) return@forEach
             val schedulesA = schedulesByMedication[medA.id].orEmpty()
             val schedulesB = schedulesByMedication[medB.id].orEmpty()
             schedulesA.forEach { schedA ->
                 schedulesB.forEach scheduleBLoop@{ schedB ->
+                    // Already grouped on the same slot → skip
+                    if (schedA.intakeGroupId != null &&
+                        schedA.intakeGroupId == schedB.intakeGroupId
+                    ) {
+                        return@scheduleBLoop
+                    }
                     val sigA = signature(schedA)
                     val sigB = signature(schedB)
                     if (!sameDayPattern(sigA, sigB)) return@scheduleBLoop
@@ -97,27 +104,25 @@ object MedicationGroupingService {
                 }
             }
         }
-        return results.distinctBy { "${it.medicationA.id}-${it.medicationB.id}-${it.minutesA}-${it.minutesB}" }
+        return results.distinctBy {
+            "${it.scheduleA.id}-${it.scheduleB.id}-${it.minutesA}-${it.minutesB}"
+        }
     }
 
-    fun nextAvailableGroupId(medications: List<Medication>): Int {
-        val used = medications.mapNotNull { it.intakeGroupId }.toSet()
+    fun nextAvailableGroupId(schedules: List<MedicationSchedule>): Int {
+        val used = schedules.mapNotNull { it.intakeGroupId }.toSet()
         for (id in 1..6) {
             if (id !in used) return id
         }
         return 1
     }
 
-    fun cleanupGroups(medications: List<Medication>): List<Pair<Long, Int?>> {
-        val byGroup = medications.filter { it.intakeGroupId != null }.groupBy { it.intakeGroupId }
+    fun cleanupGroups(schedules: List<MedicationSchedule>): List<Pair<Long, Int?>> {
+        val byGroup = schedules.filter { it.intakeGroupId != null }.groupBy { it.intakeGroupId }
         val updates = mutableListOf<Pair<Long, Int?>>()
-        byGroup.forEach { (_, groupMeds) ->
-            val active = groupMeds.filter { med ->
-                med.isActive && (med.remainingDoses == null || med.remainingDoses > 0) &&
-                    (med.remainingVolumeMl == null || med.remainingVolumeMl > 0.0)
-            }
-            when {
-                active.size <= 1 -> groupMeds.forEach { updates += it.id to null }
+        byGroup.forEach { (_, groupSchedules) ->
+            if (groupSchedules.size <= 1) {
+                groupSchedules.forEach { updates += it.id to null }
             }
         }
         return updates

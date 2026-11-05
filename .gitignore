@@ -17,3 +17,7 @@
 .kotlin/
 .vscode/
 local.properties
+
+# Local sideload APKs (do not commit binaries)
+/MediGuardV*.apk
+/*.apk

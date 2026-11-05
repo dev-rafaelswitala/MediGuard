@@ -1,28 +1,20 @@
 package com.rafaelswitala.mediguard.domain.model
 
 /**
- * Definiert, wann und wie oft ein Medikament eingenommen werden soll.
- * Unterscheidet zwischen exakten Uhrzeiten, Zeiträumen und Intervallen.
- */
-
-/**
- * Domain model for MedicationSchedule
- * Handles various scheduling strategies using polymorphism
+ * Zeitplan eines Medikaments. intakeGroupId gilt pro Slot (Schedule), nicht pauschal pro Medikament.
  */
 data class MedicationSchedule(
     val id: Long = 0,
     val medicationId: Long,
     val scheduleType: FrequencyType,
-    val scheduleData: String,  // JSON serialized based on schedule type
-    val reminderMinutes: Int = 15,  // Minutes before to remind
-    val snoozeOptions: List<Int> = listOf(5, 10, 15, 30, 60),  // Snooze options in minutes
+    val scheduleData: String,
+    val reminderMinutes: Int = 15,
+    val snoozeOptions: List<Int> = listOf(5, 10, 15, 30, 60),
     val isEnabled: Boolean = true,
+    val intakeGroupId: Int? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
-/**
- * Detailed schedule models for different schedule types
- */
 data class ExactTimeSchedule(
     val hour: Int,
     val minute: Int
@@ -47,4 +39,8 @@ data class IntervalSchedule(
     val intervalHours: Int,
     val startHour: Int,
     val startMinute: Int
+)
+
+data class OneShotSchedule(
+    val triggerAtMillis: Long
 )

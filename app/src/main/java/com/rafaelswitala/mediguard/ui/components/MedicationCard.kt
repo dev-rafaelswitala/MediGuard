@@ -41,10 +41,11 @@ fun MedicationCard(
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onSelectionChange: (Boolean) -> Unit = {},
+    scheduleGroupId: Int? = null,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
-    val groupColor = IntakeGroupColors.colorForGroupId(medication.intakeGroupId)
+    val groupColor = IntakeGroupColors.colorForGroupId(scheduleGroupId ?: medication.intakeGroupId)
     Card(
         modifier = modifier
             .fillMaxWidth()

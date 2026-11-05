@@ -1,7 +1,7 @@
 package com.rafaelswitala.mediguard.ui.screens
 
 /**
- * Dashboard mit fälligen Medikamenten, Bestandswarnungen und nächsten Intakes.
+ * Dashboard mit fälligen Medikamenten, verpassten Einnahmen, Bedarf und Bestandswarnungen.
  */
 
 import androidx.compose.foundation.Image
@@ -17,20 +17,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -54,7 +46,10 @@ import com.rafaelswitala.mediguard.R
 import com.rafaelswitala.mediguard.domain.model.IntakeHistory
 import com.rafaelswitala.mediguard.domain.model.IntakeStatus
 import com.rafaelswitala.mediguard.domain.model.Medication
+import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.reminder.UpcomingIntake
+import com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar
+import com.rafaelswitala.mediguard.ui.components.MediGuardTab
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.HistoryViewModel
 import com.rafaelswitala.mediguard.viewmodel.MedicationViewModel
@@ -62,10 +57,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Datei für den Startbildschirm.
- * Zeigt fällige Einnahmen, niedrigen Bestand und die nächsten Erinnerungen.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -73,6 +64,7 @@ fun HomeScreen(
     historyViewModel: HistoryViewModel,
     onNavigateToMedications: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
@@ -86,36 +78,25 @@ fun HomeScreen(
         .toSortedMap()
         .values
         .toList()
+    val missedGroups = intakeHistory
+        .filter { it.status == IntakeStatus.MISSED }
+        .groupBy { it.scheduledTime }
+        .toSortedMap(compareByDescending { it })
+        .values
+        .toList()
+    val prnMedications = medications.filter { it.planType == MedicationPlanType.PRN }
     var medicationToRestock by remember { mutableStateOf<Medication?>(null) }
 
     Scaffold(
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Home, contentDescription = strings.home) },
-                    label = { Text(strings.home) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToMedications,
-                    icon = { Icon(Icons.Default.Favorite, contentDescription = strings.medications) },
-                    label = { Text(strings.medications) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToHistory,
-                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = strings.history) },
-                    label = { Text(strings.history) }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToSettings,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = strings.settings) },
-                    label = { Text(strings.settings) }
-                )
-            }
+            MediGuardBottomBar(
+                selected = MediGuardTab.HOME,
+                onHome = {},
+                onMedications = onNavigateToMedications,
+                onHistory = onNavigateToHistory,
+                onProfile = onNavigateToProfile,
+                onMore = onNavigateToSettings
+            )
         }
     ) { innerPadding ->
         Box(
@@ -128,8 +109,25 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)
             ) {
-                item {
-                    HeaderCard()
+                item { HeaderCard() }
+
+                if (missedGroups.isNotEmpty()) {
+                    item {
+                        Text(
+                            strings.missedSection,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                    items(missedGroups, key = { "missed-${it.first().id}" }) { group ->
+                        PendingIntakeCard(
+                            entries = group,
+                            primaryLabel = strings.lateTake,
+                            onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
+                            onStopAlarm = historyViewModel::stopAlarm
+                        )
+                    }
                 }
 
                 item {
@@ -142,15 +140,31 @@ fun HomeScreen(
                 }
 
                 if (pendingGroups.isEmpty()) {
-                    item {
-                        NoDueMedicationCard()
-                    }
+                    item { NoDueMedicationCard() }
                 } else {
                     items(pendingGroups, key = { group -> group.first().scheduledTime }) { group ->
                         PendingIntakeCard(
                             entries = group,
+                            primaryLabel = strings.markGroupTaken,
                             onTaken = { historyViewModel.confirmIntakes(group.map { it.id }) },
                             onStopAlarm = historyViewModel::stopAlarm
+                        )
+                    }
+                }
+
+                if (prnMedications.isNotEmpty()) {
+                    item {
+                        Text(
+                            strings.prnSection,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                    items(prnMedications, key = { "prn-${it.id}" }) { medication ->
+                        PrnMedicationCard(
+                            medication = medication,
+                            onTakeNow = { historyViewModel.takePrnNow(medication) }
                         )
                     }
                 }
@@ -187,9 +201,7 @@ fun HomeScreen(
                 }
 
                 if (medications.isEmpty()) {
-                    item {
-                        EmptyState()
-                    }
+                    item { EmptyState() }
                 }
             }
         }
@@ -239,10 +251,7 @@ private fun EmptyState() {
             modifier = Modifier.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                strings.noReminders,
-                style = MaterialTheme.typography.headlineSmall
-            )
+            Text(strings.noReminders, style = MaterialTheme.typography.headlineSmall)
             Text(
                 strings.noRemindersBody,
                 style = MaterialTheme.typography.bodyMedium,
@@ -270,6 +279,7 @@ private fun NoDueMedicationCard() {
 @Composable
 private fun PendingIntakeCard(
     entries: List<IntakeHistory>,
+    primaryLabel: String,
     onTaken: () -> Unit,
     onStopAlarm: () -> Unit
 ) {
@@ -300,13 +310,35 @@ private fun PendingIntakeCard(
                 style = MaterialTheme.typography.bodySmall
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onTaken) {
-                    Text(strings.markGroupTaken)
-                }
-                OutlinedButton(onClick = onStopAlarm) {
-                    Text(strings.stopAlarm)
-                }
+                Button(onClick = onTaken) { Text(primaryLabel) }
+                OutlinedButton(onClick = onStopAlarm) { Text(strings.stopAlarm) }
             }
+        }
+    }
+}
+
+@Composable
+private fun PrnMedicationCard(
+    medication: Medication,
+    onTakeNow: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(medication.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("${medication.dosage} ${medication.dosageUnit}", style = MaterialTheme.typography.bodyMedium)
+            }
+            Button(onClick = onTakeNow) { Text(strings.takeNow) }
         }
     }
 }
@@ -334,14 +366,9 @@ private fun LowSupplyCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    medication.stockLabel(strings),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(medication.stockLabel(strings), style = MaterialTheme.typography.bodyMedium)
             }
-            Button(onClick = onRestock) {
-                Text(strings.restock)
-            }
+            Button(onClick = onRestock) { Text(strings.restock) }
         }
     }
 }
@@ -359,19 +386,9 @@ private fun NextIntakeCard(intake: UpcomingIntake) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                intake.medication.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                "${intake.medication.dosage} ${intake.medication.dosageUnit}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                "${strings.scheduled}: ${intake.formattedTime()}",
-                style = MaterialTheme.typography.bodySmall
-            )
+            Text(intake.medication.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("${intake.medication.dosage} ${intake.medication.dosageUnit}", style = MaterialTheme.typography.bodyMedium)
+            Text("${strings.scheduled}: ${intake.formattedTime()}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -379,32 +396,6 @@ private fun NextIntakeCard(intake: UpcomingIntake) {
 private fun formatHomeDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
-}
-
-@Composable
-private fun DeleteMedicationDialog(
-    medication: Medication,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    val strings = LocalAppStrings.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(strings.confirmDeleteTitle) },
-        text = {
-            Text("${strings.confirmDeleteBody}\n\n${medication.name}")
-        },
-        confirmButton = {
-            Button(onClick = onConfirm) {
-                Text(strings.delete)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.cancel)
-            }
-        }
-    )
 }
 
 @Composable
@@ -430,17 +421,12 @@ private fun RestockDialog(
             )
         },
         confirmButton = {
-            Button(
-                onClick = { stock?.let(onConfirm) },
-                enabled = stock != null
-            ) {
+            Button(onClick = { stock?.let(onConfirm) }, enabled = stock != null) {
                 Text(strings.saveStock)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(strings.cancel)
-            }
+            TextButton(onClick = onDismiss) { Text(strings.cancel) }
         }
     )
 }
@@ -460,7 +446,4 @@ private fun filterDecimalInput(value: String): String {
 }
 
 private fun parseDecimalAmount(value: String): Double? =
-    value.trim()
-        .replace(',', '.')
-        .toDoubleOrNull()
-        ?.takeIf { it > 0.0 }
+    value.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0.0 }

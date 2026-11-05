@@ -50,6 +50,7 @@ import com.rafaelswitala.mediguard.domain.model.DayPeriod
 import com.rafaelswitala.mediguard.domain.model.FrequencyType
 import com.rafaelswitala.mediguard.domain.model.Medication
 import com.rafaelswitala.mediguard.domain.model.MedicationFormType
+import com.rafaelswitala.mediguard.domain.model.MedicationPlanType
 import com.rafaelswitala.mediguard.domain.model.MedicationSchedule
 import com.rafaelswitala.mediguard.domain.model.ScheduleDataCodec
 import com.rafaelswitala.mediguard.domain.model.TreatmentType
@@ -57,6 +58,10 @@ import com.rafaelswitala.mediguard.domain.model.formatMedicationAmount
 import com.rafaelswitala.mediguard.ui.localization.LocalAppLanguage
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.MedicationViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.Date
 
 /**
  * Datei für die Maske zum Erstellen und Bearbeiten einer Medikation.
@@ -88,6 +93,9 @@ fun AddMedicationScreen(
     var dosePerIntakeMl by remember { mutableStateOf("") }
     var doseQuantity by remember { mutableStateOf("1") }
     var medicationFormType by remember { mutableStateOf(MedicationFormType.TABLET) }
+    var planType by remember { mutableStateOf(MedicationPlanType.RECURRING) }
+    var oneShotDate by remember { mutableStateOf("") }
+    var oneShotTime by remember { mutableStateOf("08:00") }
     var supplyAlertEnabled by remember { mutableStateOf(true) }
     var supplyAlertThreshold by remember { mutableStateOf("7") }
     var selectedType by remember { mutableStateOf(FrequencyType.EXACT_TIME) }
@@ -128,45 +136,64 @@ fun AddMedicationScreen(
             dosePerIntakeMl = medication.dosePerIntakeMl?.let(::formatMedicationAmount).orEmpty()
             doseQuantity = formatMedicationAmount(medication.doseQuantity)
             medicationFormType = medication.medicationFormType
+            planType = medication.planType
             supplyAlertEnabled = medication.supplyAlertEnabled
             supplyAlertThreshold = medication.supplyAlertThreshold.toString()
-            applyScheduleState(
-                schedules = editingSchedules,
-                setSelectedType = { selectedType = it },
-                setExactTimes = { exactTimes = it },
-                setIntervalHours = { intervalHours = it },
-                setIntervalStart = { intervalStart = it },
-                setWeeklyTime = { weeklyTime = it },
-                selectedPeriods = selectedPeriods,
-                selectedDays = selectedDays
-            )
+            if (medication.planType == MedicationPlanType.ONE_SHOT) {
+                val trigger = editingSchedules.firstOrNull()?.let {
+                    ScheduleDataCodec.readLong(it.scheduleData, "triggerAtMillis", 0L)
+                } ?: 0L
+                if (trigger > 0L) {
+                    oneShotDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(trigger))
+                    oneShotTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(trigger))
+                }
+            } else if (medication.planType == MedicationPlanType.RECURRING) {
+                applyScheduleState(
+                    schedules = editingSchedules,
+                    setSelectedType = { selectedType = it },
+                    setExactTimes = { exactTimes = it },
+                    setIntervalHours = { intervalHours = it },
+                    setIntervalStart = { intervalStart = it },
+                    setWeeklyTime = { weeklyTime = it },
+                    selectedPeriods = selectedPeriods,
+                    selectedDays = selectedDays
+                )
+            }
         }
         initialized = true
     }
 
-    val scheduleDrafts = buildScheduleDrafts(
-        selectedType = selectedType,
-        exactTimes = exactTimes,
-        rangeStart = rangeStart,
-        rangeEnd = rangeEnd,
-        selectedPeriods = selectedPeriods,
-        intervalHours = intervalHours,
-        intervalStart = intervalStart,
-        weeklyTime = weeklyTime,
-        selectedDays = selectedDays
-    )
+    val scheduleDrafts = when (planType) {
+        MedicationPlanType.PRN -> emptyList()
+        MedicationPlanType.ONE_SHOT -> buildOneShotDraft(oneShotDate, oneShotTime)
+        MedicationPlanType.RECURRING -> buildScheduleDrafts(
+            selectedType = selectedType,
+            exactTimes = exactTimes,
+            rangeStart = rangeStart,
+            rangeEnd = rangeEnd,
+            selectedPeriods = selectedPeriods,
+            intervalHours = intervalHours,
+            intervalStart = intervalStart,
+            weeklyTime = weeklyTime,
+            selectedDays = selectedDays
+        )
+    }
     val doseQuantityValue = parseDecimalAmount(doseQuantity)
     val stockInputIsValid = if (medicationFormType.usesVolume()) {
         remainingVolumeMl.isBlank() || parseDecimalAmount(remainingVolumeMl) != null
     } else {
         remainingDoses.isBlank() || parseDecimalAmount(remainingDoses) != null
     }
+    val schedulesValid = when (planType) {
+        MedicationPlanType.PRN -> true
+        MedicationPlanType.ONE_SHOT, MedicationPlanType.RECURRING -> scheduleDrafts.isNotEmpty()
+    }
     val canSave = medicationName.isNotBlank() &&
         dosage.isNotBlank() &&
         doseQuantityValue != null &&
         doseQuantityValue >= MINIMUM_DOSE &&
         stockInputIsValid &&
-        scheduleDrafts.isNotEmpty() &&
+        schedulesValid &&
         hasValidTreatmentLimit(treatmentType, treatmentLimitMode, durationDays, treatmentLimitDoses)
 
     Scaffold(
@@ -199,6 +226,7 @@ fun AddMedicationScreen(
                         dosageUnit = dosageUnit.trim().ifBlank { medicationFormType.defaultUnit() },
                         description = description.trim(),
                         treatmentType = treatmentType,
+                        planType = planType,
                         durationDays = if (
                             treatmentType == TreatmentType.LIMITED &&
                             treatmentLimitMode == TreatmentLimitMode.DAYS
@@ -340,6 +368,19 @@ fun AddMedicationScreen(
             }
 
             SectionCard {
+                Text(strings.planType, style = MaterialTheme.typography.titleMedium)
+                SegmentedButtons(
+                    items = listOf(
+                        MedicationPlanType.RECURRING to strings.planRecurring,
+                        MedicationPlanType.ONE_SHOT to strings.planOneShot,
+                        MedicationPlanType.PRN to strings.planPrn
+                    ),
+                    selected = planType,
+                    onSelected = { planType = it }
+                )
+            }
+
+            SectionCard {
                 Text(strings.treatment, style = MaterialTheme.typography.titleMedium)
                 SegmentedButtons(
                     items = listOf(TreatmentType.ONGOING to strings.ongoing, TreatmentType.LIMITED to strings.limited),
@@ -435,7 +476,28 @@ fun AddMedicationScreen(
                 }
             }
 
-            SectionCard {
+            when (planType) {
+                MedicationPlanType.PRN -> SectionCard {
+                    Text(strings.prnNoScheduleHint, style = MaterialTheme.typography.bodyMedium)
+                }
+                MedicationPlanType.ONE_SHOT -> SectionCard {
+                    Text(strings.planOneShot, style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = oneShotDate,
+                        onValueChange = { oneShotDate = it },
+                        label = { Text("${strings.oneShotDate} (dd/MM/yyyy)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1
+                    )
+                    OutlinedTextField(
+                        value = oneShotTime,
+                        onValueChange = { oneShotTime = it },
+                        label = { Text(strings.oneShotTime) },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1
+                    )
+                }
+                MedicationPlanType.RECURRING -> SectionCard {
                 Text(strings.reminderType, style = MaterialTheme.typography.titleMedium)
                 ScheduleTypeSelector(
                     selectedType = selectedType,
@@ -521,6 +583,8 @@ fun AddMedicationScreen(
                             maxLines = 1
                         )
                     }
+
+                    FrequencyType.ONE_SHOT -> Unit
                 }
 
                 if (!canSave) {
@@ -530,6 +594,15 @@ fun AddMedicationScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+            }
+            }
+
+            if (planType != MedicationPlanType.RECURRING && !canSave) {
+                Text(
+                    strings.validationHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
@@ -732,6 +805,33 @@ private fun buildScheduleDrafts(
             emptyList()
         }
     }
+
+    FrequencyType.ONE_SHOT -> emptyList()
+}
+
+private fun buildOneShotDraft(dateText: String, timeText: String): List<MedicationSchedule> {
+    val trigger = parseOneShotMillis(dateText, timeText) ?: return emptyList()
+    return listOf(
+        MedicationSchedule(
+            medicationId = 0,
+            scheduleType = FrequencyType.ONE_SHOT,
+            scheduleData = ScheduleDataCodec.oneShot(trigger)
+        )
+    )
+}
+
+private fun parseOneShotMillis(dateText: String, timeText: String): Long? {
+    val date = runCatching {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(dateText.trim())
+    }.getOrNull() ?: return null
+    val time = parseTime(timeText) ?: return null
+    return Calendar.getInstance().apply {
+        timeInMillis = date.time
+        set(Calendar.HOUR_OF_DAY, time.first)
+        set(Calendar.MINUTE, time.second)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 }
 
 private enum class TreatmentLimitMode {
@@ -807,6 +907,8 @@ private fun applyScheduleState(
             selectedDays.addAll(ScheduleDataCodec.readDays(first.scheduleData))
             setWeeklyTime(formatTime(hour, minute))
         }
+
+        FrequencyType.ONE_SHOT -> Unit
     }
 }
 

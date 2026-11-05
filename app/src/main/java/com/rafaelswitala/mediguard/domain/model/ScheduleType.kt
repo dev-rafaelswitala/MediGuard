@@ -14,7 +14,8 @@ enum class FrequencyType {
     TIME_RANGE,
     DAY_PERIOD,
     INTERVAL,
-    WEEKLY;
+    WEEKLY,
+    ONE_SHOT;
 
     override fun toString(): String = when (this) {
         EXACT_TIME -> "Exact Time"
@@ -22,6 +23,7 @@ enum class FrequencyType {
         DAY_PERIOD -> "Daily Period"
         INTERVAL -> "Interval"
         WEEKLY -> "Weekly"
+        ONE_SHOT -> "One-shot"
     }
 }
 
@@ -108,6 +110,13 @@ object ScheduleDataCodec {
         .put("hour", hour)
         .put("minute", minute)
         .toString()
+
+    fun oneShot(triggerAtMillis: Long): String = JSONObject()
+        .put("triggerAtMillis", triggerAtMillis)
+        .toString()
+
+    fun readLong(data: String, key: String, defaultValue: Long): Long =
+        runCatching { JSONObject(data).optLong(key, defaultValue) }.getOrDefault(defaultValue)
 
     fun readInt(data: String, key: String, defaultValue: Int): Int =
         runCatching { JSONObject(data).optInt(key, defaultValue) }.getOrDefault(defaultValue)

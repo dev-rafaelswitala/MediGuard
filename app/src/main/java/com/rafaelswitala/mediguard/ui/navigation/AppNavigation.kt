@@ -1,7 +1,7 @@
 package com.rafaelswitala.mediguard.ui.navigation
 
 /**
- * Routendefinitionen und NavHost für 5 Hauptscreens (Startseite, Medikamente, Hinzufügen, Verlauf, Einstellungen).
+ * Routendefinitionen und NavHost für Hauptscreens inkl. Profil.
  */
 
 import androidx.compose.runtime.Composable
@@ -15,14 +15,13 @@ import com.rafaelswitala.mediguard.ui.screens.AddMedicationScreen
 import com.rafaelswitala.mediguard.ui.screens.HistoryScreen
 import com.rafaelswitala.mediguard.ui.screens.HomeScreen
 import com.rafaelswitala.mediguard.ui.screens.MedicationsScreen
+import com.rafaelswitala.mediguard.ui.screens.ProfileScreen
 import com.rafaelswitala.mediguard.ui.screens.SettingsScreen
 import com.rafaelswitala.mediguard.viewmodel.HistoryViewModel
 import com.rafaelswitala.mediguard.viewmodel.MedicationViewModel
+import com.rafaelswitala.mediguard.viewmodel.ProfileViewModel
 import com.rafaelswitala.mediguard.viewmodel.SettingsViewModel
 
-/**
- * Definiert die internen Routen der App.
- */
 sealed class Route(val route: String) {
     data object Home : Route("home")
     data object Medications : Route("medications")
@@ -31,17 +30,24 @@ sealed class Route(val route: String) {
         fun createRoute(medicationId: Long): String = "edit_medication/$medicationId"
     }
     data object History : Route("history")
+    data object Profile : Route("profile")
     data object Settings : Route("settings")
 }
 
-/**
- * Verknüpft Routen mit den jeweiligen Compose-Screens.
- */
 @Composable
 fun AppNavigation(navController: NavHostController) {
     val medicationViewModel: MedicationViewModel = hiltViewModel()
     val historyViewModel: HistoryViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val profileViewModel: ProfileViewModel = hiltViewModel()
+
+    fun navigateTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(Route.Home.route) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -51,42 +57,21 @@ fun AppNavigation(navController: NavHostController) {
             HomeScreen(
                 viewModel = medicationViewModel,
                 historyViewModel = historyViewModel,
-                onNavigateToMedications = {
-                    navController.navigate(Route.Medications.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToHistory = {
-                    navController.navigate(Route.History.route)
-                },
-                onNavigateToSettings = {
-                    navController.navigate(Route.Settings.route)
-                }
+                onNavigateToMedications = { navigateTab(Route.Medications.route) },
+                onNavigateToHistory = { navigateTab(Route.History.route) },
+                onNavigateToProfile = { navigateTab(Route.Profile.route) },
+                onNavigateToSettings = { navigateTab(Route.Settings.route) }
             )
         }
 
         composable(Route.Medications.route) {
             MedicationsScreen(
                 viewModel = medicationViewModel,
-                onNavigateToAdd = {
-                    navController.navigate(Route.AddMedication.route)
-                },
-                onNavigateHome = {
-                    navController.navigate(Route.Home.route) {
-                        popUpTo(Route.Home.route)
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateHistory = {
-                    navController.navigate(Route.History.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateSettings = {
-                    navController.navigate(Route.Settings.route) {
-                        launchSingleTop = true
-                    }
-                },
+                onNavigateToAdd = { navController.navigate(Route.AddMedication.route) },
+                onNavigateHome = { navigateTab(Route.Home.route) },
+                onNavigateHistory = { navigateTab(Route.History.route) },
+                onNavigateProfile = { navigateTab(Route.Profile.route) },
+                onNavigateSettings = { navigateTab(Route.Settings.route) },
                 onNavigateToEdit = { medicationId ->
                     navController.navigate(Route.EditMedication.createRoute(medicationId))
                 }
@@ -96,9 +81,7 @@ fun AppNavigation(navController: NavHostController) {
         composable(Route.AddMedication.route) {
             AddMedicationScreen(
                 viewModel = medicationViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -109,59 +92,37 @@ fun AppNavigation(navController: NavHostController) {
             AddMedicationScreen(
                 viewModel = medicationViewModel,
                 medicationId = backStackEntry.arguments?.getLong("medicationId"),
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(Route.History.route) {
             HistoryScreen(
                 viewModel = historyViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateHome = {
-                    navController.navigate(Route.Home.route) {
-                        popUpTo(Route.Home.route)
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateMedications = {
-                    navController.navigate(Route.Medications.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateSettings = {
-                    navController.navigate(Route.Settings.route) {
-                        launchSingleTop = true
-                    }
-                }
+                onNavigateHome = { navigateTab(Route.Home.route) },
+                onNavigateMedications = { navigateTab(Route.Medications.route) },
+                onNavigateProfile = { navigateTab(Route.Profile.route) },
+                onNavigateSettings = { navigateTab(Route.Settings.route) }
+            )
+        }
+
+        composable(Route.Profile.route) {
+            ProfileScreen(
+                viewModel = profileViewModel,
+                onNavigateHome = { navigateTab(Route.Home.route) },
+                onNavigateMedications = { navigateTab(Route.Medications.route) },
+                onNavigateHistory = { navigateTab(Route.History.route) },
+                onNavigateMore = { navigateTab(Route.Settings.route) }
             )
         }
 
         composable(Route.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateHome = {
-                    navController.navigate(Route.Home.route) {
-                        popUpTo(Route.Home.route)
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateMedications = {
-                    navController.navigate(Route.Medications.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateHistory = {
-                    navController.navigate(Route.History.route) {
-                        launchSingleTop = true
-                    }
-                }
+                onNavigateHome = { navigateTab(Route.Home.route) },
+                onNavigateMedications = { navigateTab(Route.Medications.route) },
+                onNavigateHistory = { navigateTab(Route.History.route) },
+                onNavigateProfile = { navigateTab(Route.Profile.route) }
             )
         }
     }

@@ -51,4 +51,7 @@ interface MedicationScheduleDao {
 
     @Query("DELETE FROM medication_schedules WHERE medicationId = :medicationId")
     suspend fun deleteSchedulesByMedicationId(medicationId: Long)
+
+    @Query("UPDATE medication_schedules SET intakeGroupId = :groupId WHERE id = :id")
+    suspend fun updateIntakeGroup(id: Long, groupId: Int?)
 }

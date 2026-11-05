@@ -18,7 +18,7 @@
     <!-- Neutral Colors -->
     <color name="surface">#FFFAFAFA</color>
     <color name="background">#FFFFFFFF</color>
-    <color name="logo_background">#FF062733</color>
+    <color name="logo_background">#FF0C3030</color>
     <color name="on_surface">#FF212121</color>
     <color name="on_background">#FF000000</color>
 

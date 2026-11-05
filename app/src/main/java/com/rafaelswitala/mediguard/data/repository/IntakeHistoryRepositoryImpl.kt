@@ -1,7 +1,7 @@
 package com.rafaelswitala.mediguard.data.repository
 
 /**
- * Implementierung des IntakeHistoryRepository: Speicherung und Abruf des Einnahmeverlaufs.
+ * Implementierung des IntakeHistoryRepository.
  */
 
 import com.rafaelswitala.mediguard.data.local.dao.IntakeHistoryDao
@@ -13,79 +13,99 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-/**
- * Implementation of IntakeHistoryRepository
- * Handles conversation between domain models and database entities for intake history
- */
 class IntakeHistoryRepositoryImpl @Inject constructor(
     private val intakeHistoryDao: IntakeHistoryDao
 ) : IntakeHistoryRepository {
 
-    override suspend fun recordIntake(intakeHistory: IntakeHistory): Long {
-        return intakeHistoryDao.insert(intakeHistory.toEntity())
-    }
+    override suspend fun recordIntake(intakeHistory: IntakeHistory): Long =
+        intakeHistoryDao.insert(intakeHistory.toEntity())
 
     override suspend fun updateIntakeStatus(intakeHistoryId: Long, status: String, intakeTime: Long?) {
         intakeHistoryDao.updateIntakeStatus(intakeHistoryId, status, intakeTime)
     }
 
-    override suspend fun getIntakeHistoryById(id: Long): IntakeHistory? {
-        return intakeHistoryDao.getIntakeHistoryById(id)?.toDomain()
+    override suspend fun updateIntakeDetails(intakeHistory: IntakeHistory) {
+        intakeHistoryDao.update(intakeHistory.toEntity())
     }
 
-    override fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>> {
-        return intakeHistoryDao.getIntakeHistoryByMedicationId(medicationId).map { entities ->
-            entities.map { it.toDomain() }
-        }
+    override suspend fun editIntake(
+        intakeHistoryId: Long,
+        status: IntakeStatus,
+        intakeTime: Long?,
+        note: String?,
+        wasEditedLate: Boolean
+    ) {
+        intakeHistoryDao.updateIntakeDetails(
+            id = intakeHistoryId,
+            status = status.name,
+            intakeTime = intakeTime,
+            note = note,
+            editedAt = System.currentTimeMillis(),
+            wasEditedLate = wasEditedLate
+        )
     }
 
-    override fun getAllIntakeHistory(): Flow<List<IntakeHistory>> {
-        return intakeHistoryDao.getAllIntakeHistory().map { entities ->
-            entities.map { it.toDomain() }
-        }
+    override suspend fun markMissed(ids: List<Long>) {
+        if (ids.isNotEmpty()) intakeHistoryDao.markMissed(ids)
     }
 
-    override fun getIntakeHistoryInRange(from: Long, to: Long): Flow<List<IntakeHistory>> {
-        return intakeHistoryDao.getIntakeHistoryInRange(from, to).map { entities ->
-            entities.map { it.toDomain() }
-        }
+    override suspend fun setNotificationId(ids: List<Long>, notificationId: Int) {
+        if (ids.isNotEmpty()) intakeHistoryDao.setNotificationId(ids, notificationId)
     }
 
-    override fun getIntakeHistoryByStatus(status: String): Flow<List<IntakeHistory>> {
-        return intakeHistoryDao.getIntakeHistoryByStatus(status).map { entities ->
-            entities.map { it.toDomain() }
-        }
-    }
+    override suspend fun getIntakeHistoryById(id: Long): IntakeHistory? =
+        intakeHistoryDao.getIntakeHistoryById(id)?.toDomain()
+
+    override fun getIntakeHistoryByMedicationId(medicationId: Long): Flow<List<IntakeHistory>> =
+        intakeHistoryDao.getIntakeHistoryByMedicationId(medicationId).map { it.map { e -> e.toDomain() } }
+
+    override fun getAllIntakeHistory(): Flow<List<IntakeHistory>> =
+        intakeHistoryDao.getAllIntakeHistory().map { it.map { e -> e.toDomain() } }
+
+    override fun getIntakeHistoryInRange(from: Long, to: Long): Flow<List<IntakeHistory>> =
+        intakeHistoryDao.getIntakeHistoryInRange(from, to).map { it.map { e -> e.toDomain() } }
+
+    override fun getIntakeHistoryByStatus(status: String): Flow<List<IntakeHistory>> =
+        intakeHistoryDao.getIntakeHistoryByStatus(status).map { it.map { e -> e.toDomain() } }
 
     override fun getIntakeHistoryByMedicationAndStatus(
         medicationId: Long,
         status: String
-    ): Flow<List<IntakeHistory>> {
-        return intakeHistoryDao.getIntakeHistoryByMedicationAndStatus(medicationId, status).map { entities ->
-            entities.map { it.toDomain() }
-        }
-    }
+    ): Flow<List<IntakeHistory>> =
+        intakeHistoryDao.getIntakeHistoryByMedicationAndStatus(medicationId, status)
+            .map { it.map { e -> e.toDomain() } }
 
-    // Mapping functions
     private fun IntakeHistory.toEntity(): IntakeHistoryEntity = IntakeHistoryEntity(
         id = id,
         medicationId = medicationId,
+        scheduleId = scheduleId,
         scheduledTime = scheduledTime,
+        windowEndTime = windowEndTime,
         actualIntakeTime = actualIntakeTime,
         dosage = dosage,
         dosageUnit = dosageUnit,
         medicationName = medicationName,
-        status = status.name
+        status = status.name,
+        note = note,
+        editedAt = editedAt,
+        wasEditedLate = wasEditedLate,
+        notificationId = notificationId
     )
 
     private fun IntakeHistoryEntity.toDomain(): IntakeHistory = IntakeHistory(
         id = id,
         medicationId = medicationId,
+        scheduleId = scheduleId,
         scheduledTime = scheduledTime,
+        windowEndTime = windowEndTime,
         actualIntakeTime = actualIntakeTime,
         dosage = dosage,
         dosageUnit = dosageUnit,
         medicationName = medicationName,
-        status = IntakeStatus.valueOf(status)
+        status = runCatching { IntakeStatus.valueOf(status) }.getOrDefault(IntakeStatus.PENDING),
+        note = note,
+        editedAt = editedAt,
+        wasEditedLate = wasEditedLate,
+        notificationId = notificationId
     )
 }

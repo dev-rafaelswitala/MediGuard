@@ -106,6 +106,15 @@ class WeeklyReminder(
     }
 }
 
+class OneShotReminder(
+    schedule: MedicationSchedule,
+    private val triggerAtMillis: Long,
+    dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
+) : BaseReminder(schedule, dayPeriodSettings) {
+    override fun nextTriggerAfter(now: Long): Long? =
+        triggerAtMillis.takeIf { it > now }
+}
+
 object ReminderPlanFactory {
     fun from(
         schedule: MedicationSchedule,
@@ -125,12 +134,16 @@ object ReminderPlanFactory {
             dayPeriodSettings = dayPeriodSettings
         )
 
-        FrequencyType.DAY_PERIOD -> TimedReminder(
-            schedule = schedule,
-            hour = ScheduleDataCodec.readPeriod(schedule.scheduleData).preferredHour(dayPeriodSettings),
-            minute = 0,
-            dayPeriodSettings = dayPeriodSettings
-        )
+        FrequencyType.DAY_PERIOD -> {
+            val period = ScheduleDataCodec.readPeriod(schedule.scheduleData)
+            val range = dayPeriodSettings.rangeFor(period)
+            TimedReminder(
+                schedule = schedule,
+                hour = range.startMinutes / 60,
+                minute = range.startMinutes % 60,
+                dayPeriodSettings = dayPeriodSettings
+            )
+        }
 
         FrequencyType.INTERVAL -> IntervalReminder(
             schedule = schedule,
@@ -147,5 +160,41 @@ object ReminderPlanFactory {
             minute = ScheduleDataCodec.readInt(schedule.scheduleData, "minute", 0),
             dayPeriodSettings = dayPeriodSettings
         )
+
+        FrequencyType.ONE_SHOT -> OneShotReminder(
+            schedule = schedule,
+            triggerAtMillis = ScheduleDataCodec.readLong(
+                schedule.scheduleData,
+                "triggerAtMillis",
+                System.currentTimeMillis()
+            ),
+            dayPeriodSettings = dayPeriodSettings
+        )
+    }
+
+    fun windowEndMillis(
+        schedule: MedicationSchedule,
+        scheduledStartMillis: Long,
+        dayPeriodSettings: DayPeriodSettings = DayPeriodSettings.Default
+    ): Long? {
+        if (schedule.scheduleType != FrequencyType.DAY_PERIOD) return null
+        val period = ScheduleDataCodec.readPeriod(schedule.scheduleData)
+        val range = dayPeriodSettings.rangeFor(period)
+        val cal = Calendar.getInstance().apply { timeInMillis = scheduledStartMillis }
+        val endCal = Calendar.getInstance().apply {
+            timeInMillis = scheduledStartMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.MINUTE, range.endMinutes)
+            // overnight windows (e.g. night crossing midnight)
+            if (range.endMinutes < range.startMinutes &&
+                (cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)) >= range.startMinutes
+            ) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+        return endCal.timeInMillis.coerceAtLeast(scheduledStartMillis + 60_000L)
     }
 }

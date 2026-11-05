@@ -3,8 +3,7 @@ package com.rafaelswitala.mediguard.domain.model
 import java.math.BigDecimal
 
 /**
- * Datei für das Medikamentenmodell.
- * Wichtig ist hier die Trennung zwischen medizinischen Angaben, Bestand und Gruppierung.
+ * Medikamentenmodell inkl. Planart (Dauer, einmalig, Bedarf).
  */
 data class Medication(
     val id: Long = 0,
@@ -13,6 +12,7 @@ data class Medication(
     val dosageUnit: String = "mg",
     val description: String = "",
     val treatmentType: TreatmentType = TreatmentType.ONGOING,
+    val planType: MedicationPlanType = MedicationPlanType.RECURRING,
     val durationDays: Int? = null,
     val treatmentLimitDoses: Int? = null,
     val remainingDoses: Double? = null,
@@ -21,7 +21,7 @@ data class Medication(
     val doseQuantity: Double = 1.0,
     val medicationFormType: MedicationFormType = MedicationFormType.TABLET,
     val intakeGroupId: Int? = null,
-    @Deprecated("Use intakeGroupId")
+    @Deprecated("Use schedule.intakeGroupId for slot grouping")
     val groupName: String? = null,
     val supplyAlertEnabled: Boolean = true,
     val supplyAlertThreshold: Int = 7,
@@ -50,10 +50,17 @@ fun formatMedicationAmount(value: Double): String =
 
 enum class TreatmentType {
     ONGOING,
-    LIMITED;
+    LIMITED
+}
 
-    override fun toString(): String = when (this) {
-        ONGOING -> "Ongoing"
-        LIMITED -> "Limited"
+enum class MedicationPlanType {
+    RECURRING,
+    ONE_SHOT,
+    PRN;
+
+    fun label(strings: com.rafaelswitala.mediguard.ui.localization.AppStrings): String = when (this) {
+        RECURRING -> strings.planRecurring
+        ONE_SHOT -> strings.planOneShot
+        PRN -> strings.planPrn
     }
 }

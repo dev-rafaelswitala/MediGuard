@@ -21,4 +21,5 @@ interface MedicationScheduleRepository {
     fun getSchedulesByType(scheduleType: String): Flow<List<MedicationSchedule>>
     suspend fun updateScheduleStatus(scheduleId: Long, enabled: Boolean)
     suspend fun deleteSchedulesByMedicationId(medicationId: Long)
+    suspend fun updateIntakeGroup(scheduleId: Long, groupId: Int?)
 }

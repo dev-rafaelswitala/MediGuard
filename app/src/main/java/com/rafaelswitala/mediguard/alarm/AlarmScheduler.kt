@@ -30,7 +30,13 @@ interface AlarmScheduler {
         historyIds: List<Long>,
         notificationId: Int
     )
+    fun scheduleWindowEnd(
+        triggerAtMillis: Long,
+        historyIds: List<Long>,
+        notificationId: Int
+    )
     fun cancelOneTimeReminder(notificationId: Int)
+    fun cancelWindowEnd(notificationId: Int)
     suspend fun cancelAlarm(scheduleId: Long)
     fun calculateNextAlarmTime(schedule: MedicationSchedule): Long?
 }
@@ -124,12 +130,44 @@ class AndroidAlarmScheduler @Inject constructor(
         scheduleExact(triggerAtMillis, pendingIntent, notificationId)
     }
 
+    override fun scheduleWindowEnd(
+        triggerAtMillis: Long,
+        historyIds: List<Long>,
+        notificationId: Int
+    ) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = ReminderActions.ACTION_WINDOW_END
+            putExtra(ReminderActions.EXTRA_HISTORY_IDS, ReminderActions.idsToCsv(historyIds))
+            putExtra(ReminderActions.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(ReminderActions.EXTRA_SCHEDULED_TIME, triggerAtMillis)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            windowEndRequestCode(notificationId),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        scheduleExact(triggerAtMillis, pendingIntent, notificationId)
+    }
+
     override fun cancelOneTimeReminder(notificationId: Int) {
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             oneTimeRequestCode(notificationId),
             Intent(context, AlarmReceiver::class.java).apply {
                 action = ReminderActions.ACTION_ONE_TIME_REMINDER
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+    }
+
+    override fun cancelWindowEnd(notificationId: Int) {
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            windowEndRequestCode(notificationId),
+            Intent(context, AlarmReceiver::class.java).apply {
+                action = ReminderActions.ACTION_WINDOW_END
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -217,11 +255,15 @@ class AndroidAlarmScheduler @Inject constructor(
     private fun oneTimeRequestCode(notificationId: Int): Int =
         ONE_TIME_REQUEST_CODE_OFFSET + (notificationId and 0x00FFFFFF)
 
+    private fun windowEndRequestCode(notificationId: Int): Int =
+        WINDOW_END_REQUEST_CODE_OFFSET + (notificationId and 0x00FFFFFF)
+
     companion object {
         const val EXTRA_MEDICATION_ID = "medication_id"
         const val EXTRA_SCHEDULE_ID = "schedule_id"
         const val EXTRA_SCHEDULED_TIME = "scheduled_time"
         private const val ONE_TIME_REQUEST_CODE_OFFSET = 100_000
+        private const val WINDOW_END_REQUEST_CODE_OFFSET = 200_000
         private const val SHOW_INTENT_OFFSET = 30_000
         private const val OVERDUE_GRACE_MS = 12L * 60L * 60L * 1000L
     }

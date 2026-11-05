@@ -4,8 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Datenbanktabelle für Medikamente mit allen Stammdaten, Bestand und Behandlungstyp.
- * Speichert im Credential-Encrypted-Bereich (nach Unlock zugänglich).
+ * Datenbanktabelle für Medikamente mit Stammdaten, Bestand und Planart.
  */
 @Entity(tableName = "medications")
 data class MedicationEntity(
@@ -16,6 +15,7 @@ data class MedicationEntity(
     val dosageUnit: String = "mg",
     val description: String = "",
     val treatmentType: String = "ONGOING",
+    val planType: String = "RECURRING",
     val durationDays: Int? = null,
     val treatmentLimitDoses: Int? = null,
     val remainingDoses: Int? = null,
