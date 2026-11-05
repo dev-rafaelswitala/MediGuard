@@ -137,6 +137,7 @@ fun AppNavigation(navController: NavHostController) {
         composable(Route.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel,
+                profileViewModel = profileViewModel,
                 onNavigateHome = { navigateTab(Route.Home.route) },
                 onNavigateMedications = { navigateTab(Route.Medications.route) },
                 onNavigateHistory = { navigateTab(Route.History.route) },

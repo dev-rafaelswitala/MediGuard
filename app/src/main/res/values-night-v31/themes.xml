@@ -2,8 +2,8 @@
 <resources>
     <style name="Theme.MediGuard.Splash" parent="Theme.MediGuard">
         <item name="android:windowSplashScreenBackground">#FF0B1B22</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/app_logo_transparent</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#FF0B1B22</item>
         <item name="android:statusBarColor">#FF0B1B22</item>
         <item name="android:navigationBarColor">#FF0B1B22</item>
         <item name="android:colorBackground">#FF0B1B22</item>

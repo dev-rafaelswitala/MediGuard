@@ -1,15 +1,13 @@
 package com.rafaelswitala.mediguard.ui.screens
 
-/**
- * Profil-Hub mit aufklappbaren Abschnitten für Gesundheitsdaten, Kontakte und Dokumente.
- */
-
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,15 +17,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -38,23 +44,29 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.rafaelswitala.mediguard.domain.model.ContactCategory
 import com.rafaelswitala.mediguard.domain.model.DocumentCategory
-import com.rafaelswitala.mediguard.domain.model.HealthProfile
+import com.rafaelswitala.mediguard.domain.model.HealthConditionType
 import com.rafaelswitala.mediguard.ui.components.MediGuardBottomBar
 import com.rafaelswitala.mediguard.ui.components.MediGuardTab
 import com.rafaelswitala.mediguard.ui.components.StandardSectionCard
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.ProfileViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class ProfileSection { PERSONAL, GENERAL, ALLERGIES, HEALTH, INSURANCE, CONTACTS, DOCUMENTS }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
@@ -65,114 +77,66 @@ fun ProfileScreen(
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
     val profile by viewModel.profile.collectAsState()
     val allergies by viewModel.allergies.collectAsState()
+    val conditions by viewModel.conditions.collectAsState()
     val contacts by viewModel.contacts.collectAsState()
     val documents by viewModel.documents.collectAsState()
-
-    var bloodType by remember { mutableStateOf("") }
-    var heightCm by remember { mutableStateOf("") }
-    var weightKg by remember { mutableStateOf("") }
-    var aidsNotes by remember { mutableStateOf("") }
-    var organDonor by remember { mutableStateOf<Boolean?>(null) }
-    var preferredPharmacy by remember { mutableStateOf("") }
-    var otherNotes by remember { mutableStateOf("") }
-    var chronicConditions by remember { mutableStateOf("") }
-    var implantsNotes by remember { mutableStateOf("") }
-    var pregnancyNotes by remember { mutableStateOf("") }
-    var smokingAlcoholNotes by remember { mutableStateOf("") }
-    var vaccinationNotes by remember { mutableStateOf("") }
-    var lastCheckupNotes by remember { mutableStateOf("") }
-    var lastBloodPressure by remember { mutableStateOf("") }
-    var lastBloodSugar by remember { mutableStateOf("") }
-    var insuranceName by remember { mutableStateOf("") }
-    var insuranceNumber by remember { mutableStateOf("") }
-    var emergencyNotes by remember { mutableStateOf("") }
-
-    var expandedGeneral by remember { mutableStateOf(true) }
-    var expandedAllergies by remember { mutableStateOf(false) }
-    var expandedHealth by remember { mutableStateOf(false) }
-    var expandedInsurance by remember { mutableStateOf(false) }
-    var expandedEmergency by remember { mutableStateOf(false) }
-    var expandedContacts by remember { mutableStateOf(false) }
-    var expandedDocuments by remember { mutableStateOf(false) }
-    var showClearDialog by remember { mutableStateOf(false) }
-
+    val uiState by viewModel.uiState
+    var draft by remember(profile) { mutableStateOf(profile) }
+    var expanded by remember { mutableStateOf<ProfileSection?>(null) }
+    var editing by remember { mutableStateOf<ProfileSection?>(null) }
     var allergyName by remember { mutableStateOf("") }
-    var allergySeverity by remember { mutableStateOf("") }
+    var chronicName by remember { mutableStateOf("") }
+    var implantName by remember { mutableStateOf("") }
     var contactName by remember { mutableStateOf("") }
     var contactPhone by remember { mutableStateOf("") }
+    var contactNotes by remember { mutableStateOf("") }
     var contactCategory by remember { mutableStateOf(ContactCategory.DOCTOR) }
     var contactEmergency by remember { mutableStateOf(false) }
     var documentTitle by remember { mutableStateOf("") }
     var documentCategory by remember { mutableStateOf(DocumentCategory.OTHER) }
 
-    LaunchedEffect(profile) {
-        bloodType = profile.bloodType.orEmpty()
-        heightCm = profile.heightCm?.toString().orEmpty()
-        weightKg = profile.weightKg?.toString().orEmpty()
-        aidsNotes = profile.aidsNotes.orEmpty()
-        organDonor = profile.organDonor
-        preferredPharmacy = profile.preferredPharmacy.orEmpty()
-        otherNotes = profile.otherNotes.orEmpty()
-        chronicConditions = profile.chronicConditions.orEmpty()
-        implantsNotes = profile.implantsNotes.orEmpty()
-        pregnancyNotes = profile.pregnancyNotes.orEmpty()
-        smokingAlcoholNotes = profile.smokingAlcoholNotes.orEmpty()
-        vaccinationNotes = profile.vaccinationNotes.orEmpty()
-        lastCheckupNotes = profile.lastCheckupNotes.orEmpty()
-        lastBloodPressure = profile.lastBloodPressure.orEmpty()
-        lastBloodSugar = profile.lastBloodSugar.orEmpty()
-        insuranceName = profile.insuranceName.orEmpty()
-        insuranceNumber = profile.insuranceNumber.orEmpty()
-        emergencyNotes = profile.emergencyNotes.orEmpty()
+    LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
+        val message = when (uiState.successMessage) {
+            "document_imported" -> strings.documentImported
+            else -> uiState.successMessage ?: uiState.errorMessage
+        }
+        if (message != null) {
+            snackbar.showSnackbar(message)
+            viewModel.clearMessages()
+        }
     }
 
-    val pickPdf = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
+    val pickPdf = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            viewModel.importDocument(
-                uri = uri,
-                title = documentTitle.ifBlank { "PDF" },
-                category = documentCategory,
-                notes = null
-            )
+            viewModel.importDocument(uri, documentTitle.ifBlank { "PDF" }, documentCategory, null)
             documentTitle = ""
         }
     }
 
-    fun currentDraft(): HealthProfile = profile.copy(
-        bloodType = bloodType.trim().ifBlank { null },
-        heightCm = heightCm.replace(',', '.').toDoubleOrNull(),
-        weightKg = weightKg.replace(',', '.').toDoubleOrNull(),
-        aidsNotes = aidsNotes.trim().ifBlank { null },
-        organDonor = organDonor,
-        preferredPharmacy = preferredPharmacy.trim().ifBlank { null },
-        otherNotes = otherNotes.trim().ifBlank { null },
-        chronicConditions = chronicConditions.trim().ifBlank { null },
-        implantsNotes = implantsNotes.trim().ifBlank { null },
-        pregnancyNotes = pregnancyNotes.trim().ifBlank { null },
-        smokingAlcoholNotes = smokingAlcoholNotes.trim().ifBlank { null },
-        vaccinationNotes = vaccinationNotes.trim().ifBlank { null },
-        lastCheckupNotes = lastCheckupNotes.trim().ifBlank { null },
-        lastBloodPressure = lastBloodPressure.trim().ifBlank { null },
-        lastBloodSugar = lastBloodSugar.trim().ifBlank { null },
-        insuranceName = insuranceName.trim().ifBlank { null },
-        insuranceNumber = insuranceNumber.trim().ifBlank { null },
-        emergencyNotes = emergencyNotes.trim().ifBlank { null }
-    )
+    fun save(section: ProfileSection) {
+        val message = when (section) {
+            ProfileSection.PERSONAL -> strings.personalSaved
+            ProfileSection.GENERAL -> strings.generalSaved
+            ProfileSection.HEALTH -> strings.healthSaved
+            ProfileSection.INSURANCE -> strings.insuranceSaved
+            else -> strings.profileSectionSaved
+        }
+        viewModel.saveProfile(draft, message)
+        editing = null
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(strings.profile) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
+        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             MediGuardBottomBar(
                 selected = MediGuardTab.PROFILE,
@@ -183,221 +147,416 @@ fun ProfileScreen(
                 onMore = onNavigateMore
             )
         }
-    ) { innerPadding ->
+    ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(12.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                strings.profileDisclaimer,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(strings.profileDisclaimer, style = MaterialTheme.typography.bodySmall)
 
-            AccordionSection(strings.sectionGeneral, expandedGeneral, { expandedGeneral = it }) {
-                OutlinedTextField(bloodType, { bloodType = it }, label = { Text(strings.bloodType) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(heightCm, { heightCm = it }, label = { Text(strings.heightCm) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(weightKg, { weightKg = it }, label = { Text(strings.weightKg) }, modifier = Modifier.fillMaxWidth())
-                val bmi = currentDraft().bmi()
-                Text(
-                    "${strings.bmi}: ${bmi?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: strings.notSet}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                OutlinedTextField(aidsNotes, { aidsNotes = it }, label = { Text(strings.aidsNotes) }, modifier = Modifier.fillMaxWidth())
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(strings.organDonor, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { organDonor = true }) { Text(strings.yes) }
-                    TextButton(onClick = { organDonor = false }) { Text(strings.no) }
+            ProfileAccordion(strings.sectionPersonal, ProfileSection.PERSONAL, expanded, { expanded = it }) {
+                SectionActions(editing == ProfileSection.PERSONAL, strings.edit, strings.save, strings.cancel,
+                    { editing = ProfileSection.PERSONAL }, { save(ProfileSection.PERSONAL) }) {
+                    draft = profile; editing = null
                 }
-                OutlinedTextField(preferredPharmacy, { preferredPharmacy = it }, label = { Text(strings.preferredPharmacy) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(otherNotes, { otherNotes = it }, label = { Text(strings.otherNotes) }, modifier = Modifier.fillMaxWidth())
+                if (editing == ProfileSection.PERSONAL) {
+                    ProfileField(draft.fullName, strings.fullName) { draft = draft.copy(fullName = it.nullIfBlank()) }
+                    ProfileField(draft.addressLine, strings.address) { draft = draft.copy(addressLine = it.nullIfBlank()) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProfileField(draft.postalCode, strings.postalCode, Modifier.weight(1f)) { draft = draft.copy(postalCode = it.nullIfBlank()) }
+                        ProfileField(draft.city, strings.city, Modifier.weight(1f)) { draft = draft.copy(city = it.nullIfBlank()) }
+                    }
+                    ProfileField(draft.phone, strings.phone) { draft = draft.copy(phone = it.nullIfBlank()) }
+                    ProfileField(draft.email, strings.email) { draft = draft.copy(email = it.nullIfBlank()) }
+                } else {
+                    ProfileValue(strings.fullName, profile.fullName, strings.notSet)
+                    ProfileValue(strings.address, profile.addressLine, strings.notSet)
+                    ProfileValue(strings.postalCode, profile.postalCode, strings.notSet)
+                    ProfileValue(strings.city, profile.city, strings.notSet)
+                    ProfileValue(strings.phone, profile.phone, strings.notSet)
+                    ProfileValue(strings.email, profile.email, strings.notSet)
+                }
             }
 
-            AccordionSection(strings.sectionAllergies, expandedAllergies, { expandedAllergies = it }) {
+            ProfileAccordion(strings.sectionGeneralDetails, ProfileSection.GENERAL, expanded, { expanded = it }) {
+                SectionActions(editing == ProfileSection.GENERAL, strings.edit, strings.save, strings.cancel,
+                    { editing = ProfileSection.GENERAL }, { save(ProfileSection.GENERAL) }) { draft = profile; editing = null }
+                if (editing == ProfileSection.GENERAL) {
+                    BloodTypeField(draft.bloodType, strings.bloodType, strings.notSet) { draft = draft.copy(bloodType = it) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NumberField(draft.heightCm?.toString(), strings.heightCm, Modifier.weight(1f)) { draft = draft.copy(heightCm = it.toDoubleOrNull()) }
+                        NumberField(draft.weightKg?.toString(), strings.weightKg, Modifier.weight(1f)) { draft = draft.copy(weightKg = it.toDoubleOrNull()) }
+                    }
+                    ExpandingNotesField(draft.otherNotes.orEmpty(), { draft = draft.copy(otherNotes = it.nullIfBlank()) }, strings.otherNotes)
+                    BooleanChoice(strings.organDonor, draft.organDonor, strings.yes, strings.no) { draft = draft.copy(organDonor = it) }
+                    ProfileField(draft.preferredPharmacy, strings.preferredPharmacy) { draft = draft.copy(preferredPharmacy = it.nullIfBlank()) }
+                    ProfileField(draft.preferredPharmacyAddress, strings.pharmacyAddress) { draft = draft.copy(preferredPharmacyAddress = it.nullIfBlank()) }
+                    ProfileField(draft.preferredPharmacyPhone, strings.pharmacyPhone) { draft = draft.copy(preferredPharmacyPhone = it.nullIfBlank()) }
+                } else {
+                    ProfileValue(strings.bloodType, profile.bloodType, strings.notSet)
+                    ProfileValue(strings.heightCm, profile.heightCm?.toString(), strings.notSet)
+                    ProfileValue(strings.weightKg, profile.weightKg?.toString(), strings.notSet)
+                    ProfileValue(strings.bmi, profile.bmi()?.let { String.format(Locale.getDefault(), "%.1f", it) }, strings.notSet)
+                    ProfileValue(strings.otherNotes, profile.otherNotes, strings.notSet)
+                    ProfileValue(strings.organDonor, profile.organDonor?.let { if (it) strings.yes else strings.no }, strings.notSet)
+                    ProfileValue(strings.preferredPharmacy, profile.preferredPharmacy, strings.notSet)
+                    ProfileValue(strings.pharmacyAddress, profile.preferredPharmacyAddress, strings.notSet)
+                    ProfileValue(strings.pharmacyPhone, profile.preferredPharmacyPhone, strings.notSet)
+                }
+            }
+
+            ProfileAccordion(strings.sectionAllergies, ProfileSection.ALLERGIES, expanded, { expanded = it }) {
+                EditToggle(editing == ProfileSection.ALLERGIES, strings.edit, strings.done) {
+                    editing = if (editing == ProfileSection.ALLERGIES) null else ProfileSection.ALLERGIES
+                }
                 if (allergies.isEmpty()) Text(strings.noAllergies)
-                allergies.forEach { allergy ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${allergy.name}${allergy.severity?.let { " ($it)" } ?: ""}")
-                        TextButton(onClick = { viewModel.deleteAllergy(allergy) }) { Text(strings.delete) }
+                allergies.forEach { item ->
+                    ListRow(item.name, editing == ProfileSection.ALLERGIES, strings.delete) { viewModel.deleteAllergy(item) }
+                }
+                if (editing == ProfileSection.ALLERGIES) {
+                    ProfileField(allergyName, strings.allergyName) { allergyName = it }
+                    Button(onClick = { viewModel.addAllergy(allergyName, null, null); allergyName = "" }, enabled = allergyName.isNotBlank()) {
+                        Text(strings.addAllergy)
                     }
                 }
-                OutlinedTextField(allergyName, { allergyName = it }, label = { Text(strings.allergyName) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(allergySeverity, { allergySeverity = it }, label = { Text(strings.allergySeverity) }, modifier = Modifier.fillMaxWidth())
-                Button(onClick = {
-                    viewModel.addAllergy(allergyName, allergySeverity.ifBlank { null }, null)
-                    allergyName = ""
-                    allergySeverity = ""
-                }) { Text(strings.addAllergy) }
             }
 
-            AccordionSection(strings.sectionHealth, expandedHealth, { expandedHealth = it }) {
-                OutlinedTextField(chronicConditions, { chronicConditions = it }, label = { Text(strings.chronicConditions) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(implantsNotes, { implantsNotes = it }, label = { Text(strings.implantsNotes) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(pregnancyNotes, { pregnancyNotes = it }, label = { Text(strings.pregnancyNotes) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(smokingAlcoholNotes, { smokingAlcoholNotes = it }, label = { Text(strings.smokingAlcoholNotes) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(vaccinationNotes, { vaccinationNotes = it }, label = { Text(strings.vaccinationNotes) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(lastCheckupNotes, { lastCheckupNotes = it }, label = { Text(strings.lastCheckupNotes) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(lastBloodPressure, { lastBloodPressure = it }, label = { Text(strings.lastBloodPressure) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(lastBloodSugar, { lastBloodSugar = it }, label = { Text(strings.lastBloodSugar) }, modifier = Modifier.fillMaxWidth())
-            }
-
-            AccordionSection(strings.sectionInsurance, expandedInsurance, { expandedInsurance = it }) {
-                OutlinedTextField(insuranceName, { insuranceName = it }, label = { Text(strings.insuranceName) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(insuranceNumber, { insuranceNumber = it }, label = { Text(strings.insuranceNumber) }, modifier = Modifier.fillMaxWidth())
-            }
-
-            AccordionSection(strings.sectionEmergency, expandedEmergency, { expandedEmergency = it }) {
-                OutlinedTextField(emergencyNotes, { emergencyNotes = it }, label = { Text(strings.emergencyNotes) }, modifier = Modifier.fillMaxWidth())
-                contacts.filter { it.isEmergency }.forEach { contact ->
-                    Text("${contact.name}${contact.phone?.let { " · $it" } ?: ""}", style = MaterialTheme.typography.bodyMedium)
+            ProfileAccordion(strings.sectionHealth, ProfileSection.HEALTH, expanded, { expanded = it }) {
+                SectionActions(editing == ProfileSection.HEALTH, strings.edit, strings.save, strings.cancel,
+                    { editing = ProfileSection.HEALTH }, { save(ProfileSection.HEALTH) }) { draft = profile; editing = null }
+                Text(strings.chronicConditions, style = MaterialTheme.typography.titleSmall)
+                val chronic = conditions.filter { it.type == HealthConditionType.CHRONIC }
+                if (chronic.isEmpty()) Text(strings.notSet) else chronic.forEach { item ->
+                    ListRow(item.name, editing == ProfileSection.HEALTH, strings.delete) { viewModel.deleteCondition(item) }
+                }
+                if (editing == ProfileSection.HEALTH) {
+                    ConditionAdder(strings.chronicConditions, chronicName, { chronicName = it }) {
+                        viewModel.addCondition(chronicName, HealthConditionType.CHRONIC); chronicName = ""
+                    }
+                }
+                Text(strings.implantsNotes, style = MaterialTheme.typography.titleSmall)
+                val implants = conditions.filter { it.type == HealthConditionType.IMPLANT }
+                if (implants.isEmpty()) Text(strings.notSet) else implants.forEach { item ->
+                    ListRow(item.name, editing == ProfileSection.HEALTH, strings.delete) { viewModel.deleteCondition(item) }
+                }
+                if (editing == ProfileSection.HEALTH) {
+                    ConditionAdder(strings.implantsNotes, implantName, { implantName = it }) {
+                        viewModel.addCondition(implantName, HealthConditionType.IMPLANT); implantName = ""
+                    }
+                    SwitchRow(strings.pregnant, draft.pregnant == true) { draft = draft.copy(pregnant = it) }
+                    SwitchRow(strings.smoking, draft.smoking == true) { draft = draft.copy(smoking = it, cigarettesPerDay = if (it) draft.cigarettesPerDay else null) }
+                    if (draft.smoking == true) NumberField(draft.cigarettesPerDay?.toString(), strings.cigarettesPerDay) {
+                        draft = draft.copy(cigarettesPerDay = it.toIntOrNull())
+                    }
+                    ExpandingNotesField(draft.vaccinationNotes.orEmpty(), { draft = draft.copy(vaccinationNotes = it.nullIfBlank()) }, strings.vaccinationNotes)
+                    ProfileField(draft.lastCheckupNotes, strings.lastCheckupNotes) { draft = draft.copy(lastCheckupNotes = it.nullIfBlank()) }
+                    ProfileField(draft.lastBloodPressure, strings.lastBloodPressure) { draft = draft.copy(lastBloodPressure = it.nullIfBlank()) }
+                    ProfileField(draft.lastBloodSugar, strings.lastBloodSugar) { draft = draft.copy(lastBloodSugar = it.nullIfBlank()) }
+                } else {
+                    ProfileValue(strings.pregnant, profile.pregnant?.let { if (it) strings.yes else strings.no }, strings.notSet)
+                    ProfileValue(strings.smoking, profile.smoking?.let { if (it) strings.yes else strings.no }, strings.notSet)
+                    if (profile.smoking == true) ProfileValue(strings.cigarettesPerDay, profile.cigarettesPerDay?.toString(), strings.notSet)
+                    ProfileValue(strings.vaccinationNotes, profile.vaccinationNotes, strings.notSet)
+                    ProfileValue(strings.lastCheckupNotes, profile.lastCheckupNotes, strings.notSet)
+                    ProfileValue(strings.lastBloodPressure, profile.lastBloodPressure, strings.notSet)
+                    ProfileValue(strings.lastBloodSugar, profile.lastBloodSugar, strings.notSet)
                 }
             }
 
-            AccordionSection(strings.sectionContacts, expandedContacts, { expandedContacts = it }) {
+            ProfileAccordion(strings.sectionInsurance, ProfileSection.INSURANCE, expanded, { expanded = it }) {
+                SectionActions(editing == ProfileSection.INSURANCE, strings.edit, strings.save, strings.cancel,
+                    { editing = ProfileSection.INSURANCE }, { save(ProfileSection.INSURANCE) }) { draft = profile; editing = null }
+                val fields = listOf(
+                    strings.insuranceName to draft.healthInsuranceName,
+                    strings.insuranceNumber to draft.healthInsuranceNumber,
+                    strings.additionalInsurance to draft.additionalInsurance,
+                    strings.careInsurance to draft.careInsurance
+                )
+                if (editing == ProfileSection.INSURANCE) {
+                    fields.forEachIndexed { index, (label, value) ->
+                        ProfileField(value, label) { text ->
+                            draft = when (index) {
+                                0 -> draft.copy(healthInsuranceName = text.nullIfBlank())
+                                1 -> draft.copy(healthInsuranceNumber = text.nullIfBlank())
+                                2 -> draft.copy(additionalInsurance = text.nullIfBlank())
+                                else -> draft.copy(careInsurance = text.nullIfBlank())
+                            }
+                        }
+                    }
+                    ExpandingNotesField(draft.insuranceNotes.orEmpty(), { draft = draft.copy(insuranceNotes = it.nullIfBlank()) }, strings.notes)
+                } else {
+                    fields.forEach { (label, value) -> ProfileValue(label, value, strings.notSet) }
+                    ProfileValue(strings.notes, profile.insuranceNotes, strings.notSet)
+                }
+            }
+
+            ProfileAccordion(strings.sectionContacts, ProfileSection.CONTACTS, expanded, { expanded = it }) {
+                EditToggle(editing == ProfileSection.CONTACTS, strings.edit, strings.done) {
+                    editing = if (editing == ProfileSection.CONTACTS) null else ProfileSection.CONTACTS
+                }
                 if (contacts.isEmpty()) Text(strings.noContacts)
                 contacts.forEach { contact ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(contact.name, style = MaterialTheme.typography.titleSmall)
-                            Text(contact.category.label(strings))
-                            contact.phone?.let { Text(it) }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(contact.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                            if (editing == ProfileSection.CONTACTS) {
+                                TextButton(onClick = { viewModel.deleteContact(contact) }) { Text(strings.delete) }
+                            }
                         }
-                        TextButton(onClick = { viewModel.deleteContact(contact) }) { Text(strings.delete) }
+                        Text("${contact.category.label(strings)} · ${contact.phone ?: strings.notSet}")
+                        contact.notes?.takeIf { it.isNotBlank() }?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (contact.isEmergency) {
+                            AssistChip(
+                                onClick = {},
+                                enabled = false,
+                                label = { Text(strings.contactEmergency) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    disabledContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            )
+                        } else {
+                            Text(
+                                "${strings.contactEmergency}: ${strings.no}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-                OutlinedTextField(contactName, { contactName = it }, label = { Text(strings.contactName) }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(contactPhone, { contactPhone = it }, label = { Text(strings.contactPhone) }, modifier = Modifier.fillMaxWidth())
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ContactCategory.entries.forEach { cat ->
-                        OutlinedButton(onClick = { contactCategory = cat }) {
-                            Text(cat.label(strings))
-                        }
+                if (editing == ProfileSection.CONTACTS) {
+                    ProfileField(contactName, strings.contactName) { contactName = it }
+                    ProfileField(contactPhone, strings.contactPhone) { contactPhone = it }
+                    ExpandingNotesField(contactNotes, { contactNotes = it }, strings.notes)
+                    Text(strings.contactCategory, style = MaterialTheme.typography.titleSmall)
+                    CategoryChipRow(
+                        options = ContactCategory.entries.map { it to it.label(strings) },
+                        selected = contactCategory
+                    ) { contactCategory = it }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(contactEmergency, { contactEmergency = it })
+                        Text(strings.contactEmergency)
                     }
+                    Button(
+                        enabled = contactName.isNotBlank(),
+                        onClick = {
+                            viewModel.addContact(contactName, contactCategory, null, contactPhone.nullIfBlank(), null, null,
+                                contactNotes.nullIfBlank(), contactEmergency)
+                            contactName = ""; contactPhone = ""; contactNotes = ""; contactEmergency = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(strings.addContact) }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = contactEmergency, onCheckedChange = { contactEmergency = it })
-                    Text(strings.contactEmergency)
-                }
-                Button(onClick = {
-                    viewModel.addContact(
-                        name = contactName,
-                        category = contactCategory,
-                        specialty = null,
-                        phone = contactPhone.ifBlank { null },
-                        email = null,
-                        address = null,
-                        notes = null,
-                        isEmergency = contactEmergency
-                    )
-                    contactName = ""
-                    contactPhone = ""
-                    contactEmergency = false
-                }) { Text(strings.addContact) }
             }
 
-            AccordionSection(strings.sectionDocuments, expandedDocuments, { expandedDocuments = it }) {
+            ProfileAccordion(strings.sectionDocuments, ProfileSection.DOCUMENTS, expanded, { expanded = it }) {
+                EditToggle(editing == ProfileSection.DOCUMENTS, strings.edit, strings.done) {
+                    editing = if (editing == ProfileSection.DOCUMENTS) null else ProfileSection.DOCUMENTS
+                }
                 if (documents.isEmpty()) Text(strings.noDocuments)
                 documents.forEach { doc ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(doc.title, style = MaterialTheme.typography.titleSmall)
-                            Text(doc.category.label(strings))
-                        }
-                        TextButton(onClick = {
-                            val file = viewModel.documentFile(doc)
-                            if (file.exists()) {
-                                val uri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    file
-                                )
-                                val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, doc.mimeType)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                runCatching { context.startActivity(intent) }
+                        Text(doc.title, style = MaterialTheme.typography.titleSmall)
+                        Text(doc.category.label(strings), style = MaterialTheme.typography.bodySmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = {
+                                runCatching {
+                                    val file = viewModel.documentFile(doc)
+                                    require(file.exists())
+                                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                                    context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(uri, "application/pdf")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    })
+                                }.onFailure { scope.launch { snackbar.showSnackbar(strings.documentOpenFailed) } }
+                            }) { Text(strings.openDocument) }
+                            if (editing == ProfileSection.DOCUMENTS) {
+                                TextButton(onClick = { viewModel.deleteDocument(doc) }) { Text(strings.delete) }
                             }
-                        }) { Text(strings.openDocument) }
-                        TextButton(onClick = { viewModel.deleteDocument(doc) }) { Text(strings.delete) }
-                    }
-                }
-                OutlinedTextField(documentTitle, { documentTitle = it }, label = { Text(strings.documentTitle) }, modifier = Modifier.fillMaxWidth())
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    DocumentCategory.entries.forEach { cat ->
-                        OutlinedButton(onClick = { documentCategory = cat }) {
-                            Text(cat.label(strings))
                         }
                     }
                 }
-                Button(onClick = { pickPdf.launch(arrayOf("application/pdf")) }) {
-                    Text(strings.addDocument)
+                if (editing == ProfileSection.DOCUMENTS) {
+                    ProfileField(documentTitle, strings.documentTitle) { documentTitle = it }
+                    Text(strings.documentCategory, style = MaterialTheme.typography.titleSmall)
+                    CategoryChipRow(
+                        options = DocumentCategory.entries.map { it to it.label(strings) },
+                        selected = documentCategory
+                    ) { documentCategory = it }
+                    Button(
+                        onClick = { pickPdf.launch(arrayOf("application/pdf")) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(strings.addDocument) }
                 }
             }
-
-            Button(
-                onClick = { viewModel.saveProfile(currentDraft()) },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(strings.saveProfile) }
-
-            OutlinedButton(
-                onClick = { showClearDialog = true },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(strings.clearProfile) }
         }
-    }
-
-    if (showClearDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearDialog = false },
-            title = { Text(strings.clearProfile) },
-            text = { Text(strings.clearProfileConfirm) },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.clearAll()
-                    showClearDialog = false
-                }) { Text(strings.delete) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) { Text(strings.cancel) }
-            }
-        )
     }
 }
 
 @Composable
-private fun AccordionSection(
+private fun ProfileAccordion(
     title: String,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
+    section: ProfileSection,
+    expanded: ProfileSection?,
+    onExpanded: (ProfileSection?) -> Unit,
     content: @Composable () -> Unit
+) = StandardSectionCard {
+    Row(
+        Modifier.fillMaxWidth().clickable { onExpanded(if (expanded == section) null else section) },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Icon(if (expanded == section) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null)
+    }
+    if (expanded == section) Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { content() }
+}
+
+@Composable
+private fun SectionActions(editing: Boolean, edit: String, save: String, cancel: String, onEdit: () -> Unit, onSave: () -> Unit, onCancel: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        if (editing) {
+            TextButton(onClick = onCancel) { Text(cancel) }
+            Button(onClick = onSave) { Text(save) }
+        } else OutlinedButton(onClick = onEdit) { Text(edit) }
+    }
+}
+
+@Composable
+private fun EditToggle(editing: Boolean, edit: String, done: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        OutlinedButton(onClick = onClick) { Text(if (editing) done else edit) }
+    }
+}
+
+@Composable
+private fun ProfileField(value: String?, label: String, modifier: Modifier = Modifier.fillMaxWidth(), onChange: (String) -> Unit) {
+    OutlinedTextField(value.orEmpty(), onChange, label = { Text(label) }, modifier = modifier, singleLine = true)
+}
+
+@Composable
+private fun NumberField(value: String?, label: String, modifier: Modifier = Modifier.fillMaxWidth(), onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value.orEmpty(),
+        { onChange(it.filter { char -> char.isDigit() || char == '.' || char == ',' }.replace(',', '.')) },
+        label = { Text(label) },
+        modifier = modifier,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true
+    )
+}
+
+@Composable
+fun ExpandingNotesField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier.fillMaxWidth()) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        minLines = 1,
+        maxLines = 4,
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> CategoryChipRow(
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelect: (T) -> Unit
 ) {
-    StandardSectionCard {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onExpandedChange(!expanded) }
-                .padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Icon(
-                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null
+    val colors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.primary,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        options.forEach { (value, label) ->
+            FilterChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = { Text(label) },
+                colors = colors
             )
-        }
-        if (expanded) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                content()
-            }
         }
     }
 }
+
+@Composable
+private fun ProfileValue(label: String, value: String?, notSet: String) {
+    Text("$label: ${value?.takeIf { it.isNotBlank() } ?: notSet}", style = MaterialTheme.typography.bodyMedium)
+}
+
+@Composable
+private fun BooleanChoice(label: String, value: Boolean?, yes: String, no: String, onChange: (Boolean) -> Unit) {
+    val colors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.primary,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f))
+        FilterChip(value == true, { onChange(true) }, { Text(yes) }, colors = colors)
+        FilterChip(value == false, { onChange(false) }, { Text(no) }, modifier = Modifier.padding(start = 6.dp), colors = colors)
+    }
+}
+
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f))
+        Switch(checked, onChange)
+    }
+}
+
+@Composable
+private fun ListRow(name: String, editable: Boolean, delete: String, onDelete: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(name, Modifier.weight(1f))
+        if (editable) TextButton(onClick = onDelete) { Text(delete) }
+    }
+}
+
+@Composable
+private fun ConditionAdder(label: String, value: String, onChange: (String) -> Unit, onAdd: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(value, onChange, label = { Text(label) }, modifier = Modifier.weight(1f))
+        Button(onClick = onAdd, enabled = value.isNotBlank()) { Text("+") }
+    }
+}
+
+@Composable
+private fun BloodTypeField(value: String?, label: String, notSet: String, onChange: (String?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Column {
+        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("$label: ${value ?: notSet}")
+        }
+        DropdownMenu(open, { open = false }) {
+            listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-").forEach { bloodType ->
+                DropdownMenuItem({ Text(bloodType) }, onClick = { onChange(bloodType); open = false })
+            }
+            DropdownMenuItem({ Text(notSet) }, onClick = { onChange(null); open = false })
+        }
+    }
+}
+
+private fun String.nullIfBlank(): String? = trim().ifBlank { null }

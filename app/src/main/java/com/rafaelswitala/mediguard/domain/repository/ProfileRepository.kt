@@ -3,6 +3,7 @@ package com.rafaelswitala.mediguard.domain.repository
 import android.net.Uri
 import com.rafaelswitala.mediguard.domain.model.HealthAllergy
 import com.rafaelswitala.mediguard.domain.model.HealthContact
+import com.rafaelswitala.mediguard.domain.model.HealthCondition
 import com.rafaelswitala.mediguard.domain.model.HealthProfile
 import com.rafaelswitala.mediguard.domain.model.MedicalDocument
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +15,9 @@ interface ProfileRepository {
     fun observeAllergies(): Flow<List<HealthAllergy>>
     suspend fun addAllergy(allergy: HealthAllergy): Long
     suspend fun deleteAllergy(allergy: HealthAllergy)
+    fun observeConditions(): Flow<List<HealthCondition>>
+    suspend fun addCondition(condition: HealthCondition): Long
+    suspend fun deleteCondition(condition: HealthCondition)
     fun observeContacts(): Flow<List<HealthContact>>
     suspend fun addContact(contact: HealthContact): Long
     suspend fun updateContact(contact: HealthContact)

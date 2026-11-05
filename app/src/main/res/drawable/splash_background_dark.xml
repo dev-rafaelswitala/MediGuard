@@ -6,8 +6,8 @@
         </shape>
     </item>
     <item
-        android:width="180dp"
-        android:height="180dp"
+        android:width="280dp"
+        android:height="140dp"
         android:gravity="center"
-        android:drawable="@drawable/app_logo_transparent" />
+        android:drawable="@drawable/ic_splash_brand" />
 </layer-list>

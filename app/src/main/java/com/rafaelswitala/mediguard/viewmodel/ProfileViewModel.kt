@@ -8,6 +8,8 @@ import com.rafaelswitala.mediguard.domain.model.ContactCategory
 import com.rafaelswitala.mediguard.domain.model.DocumentCategory
 import com.rafaelswitala.mediguard.domain.model.HealthAllergy
 import com.rafaelswitala.mediguard.domain.model.HealthContact
+import com.rafaelswitala.mediguard.domain.model.HealthCondition
+import com.rafaelswitala.mediguard.domain.model.HealthConditionType
 import com.rafaelswitala.mediguard.domain.model.HealthProfile
 import com.rafaelswitala.mediguard.domain.model.MedicalDocument
 import com.rafaelswitala.mediguard.domain.repository.ProfileRepository
@@ -36,13 +38,16 @@ class ProfileViewModel @Inject constructor(
     val contacts: StateFlow<List<HealthContact>> = profileRepository.observeContacts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val conditions: StateFlow<List<HealthCondition>> = profileRepository.observeConditions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val documents: StateFlow<List<MedicalDocument>> = profileRepository.observeDocuments()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun saveProfile(profile: HealthProfile) {
+    fun saveProfile(profile: HealthProfile, successMessage: String = "saved") {
         viewModelScope.launch {
             profileRepository.saveProfile(profile)
-            _uiState.value = _uiState.value.copy(successMessage = "saved")
+            _uiState.value = _uiState.value.copy(successMessage = successMessage)
         }
     }
 
@@ -57,6 +62,17 @@ class ProfileViewModel @Inject constructor(
 
     fun deleteAllergy(allergy: HealthAllergy) {
         viewModelScope.launch { profileRepository.deleteAllergy(allergy) }
+    }
+
+    fun addCondition(name: String, type: HealthConditionType) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            profileRepository.addCondition(HealthCondition(name = name.trim(), type = type))
+        }
+    }
+
+    fun deleteCondition(condition: HealthCondition) {
+        viewModelScope.launch { profileRepository.deleteCondition(condition) }
     }
 
     fun addContact(
@@ -105,6 +121,7 @@ class ProfileViewModel @Inject constructor(
                     documentDateMillis = System.currentTimeMillis(),
                     notes = notes
                 )
+                _uiState.value = _uiState.value.copy(successMessage = "document_imported")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = e.message)
             }

@@ -74,20 +74,20 @@ fun MedicationCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.Top
         ) {
             if (selectionMode) {
                 Checkbox(
                     checked = selected,
                     onCheckedChange = { checked -> onSelectionChange(checked) },
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
             groupColor?.let { color ->
                 Box(
                     modifier = Modifier
-                        .padding(end = 10.dp)
+                        .padding(top = 2.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .background(color)
                         .padding(horizontal = 4.dp, vertical = 32.dp)
@@ -135,27 +135,24 @@ fun MedicationCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-            if (!selectionMode) {
                 when {
                     isPrn -> Text(
                         strings.asNeeded,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    scheduleSummary == null -> TextButton(onClick = { onPlanClick(medication.id) }) {
-                        Text(strings.plan)
-                    }
-                    else -> TextButton(
+                    scheduleSummary != null -> Text(
+                        text = scheduleSummary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!selectionMode) {
+                    TextButton(
                         onClick = { onPlanClick(medication.id) },
-                        modifier = Modifier.padding(start = 4.dp)
+                        modifier = Modifier.padding(start = 0.dp)
                     ) {
-                        Text(
-                            text = scheduleSummary,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
+                        Text(strings.plan)
                     }
                 }
             }

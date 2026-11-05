@@ -28,6 +28,7 @@ import com.rafaelswitala.mediguard.data.settings.AppPreferencesRepository
 import com.rafaelswitala.mediguard.data.settings.AppSettings
 import com.rafaelswitala.mediguard.data.settings.AppThemeMode
 import com.rafaelswitala.mediguard.data.datastore.DirectBootAlarmStore
+import com.rafaelswitala.mediguard.ui.components.BrandSplashOverlay
 import com.rafaelswitala.mediguard.ui.localization.LocalAppLanguage
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.ui.localization.stringsFor
@@ -74,8 +75,10 @@ class MainActivity : ComponentActivity() {
                     LocalAppLanguage provides settings.language
                 ) {
                     val navController = rememberNavController()
-                    Surface {
-                        AppNavigation(navController = navController)
+                    BrandSplashOverlay(darkTheme = darkTheme) {
+                        Surface {
+                            AppNavigation(navController = navController)
+                        }
                     }
                 }
             }

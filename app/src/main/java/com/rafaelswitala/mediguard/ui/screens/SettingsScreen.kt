@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +58,7 @@ import com.rafaelswitala.mediguard.ui.components.StandardSectionCard
 import com.rafaelswitala.mediguard.ui.localization.LocalAppLanguage
 import com.rafaelswitala.mediguard.ui.localization.LocalAppStrings
 import com.rafaelswitala.mediguard.viewmodel.SettingsViewModel
+import com.rafaelswitala.mediguard.viewmodel.ProfileViewModel
 
 /**
  * Datei für die Einstellungen.
@@ -64,6 +68,7 @@ import com.rafaelswitala.mediguard.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    profileViewModel: ProfileViewModel,
     onNavigateHome: () -> Unit = {},
     onNavigateMedications: () -> Unit = {},
     onNavigateHistory: () -> Unit = {},
@@ -72,6 +77,7 @@ fun SettingsScreen(
     val strings = LocalAppStrings.current
     val settings by viewModel.settings.collectAsState()
     val context = LocalContext.current
+    var showClearProfileDialog by remember { mutableStateOf(false) }
     val ringtonePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -208,7 +214,43 @@ fun SettingsScreen(
                 language = LocalAppLanguage.current,
                 onSave = viewModel::setDayPeriodSettings
             )
+
+            StandardSectionCard(title = strings.profile) {
+                Text(strings.clearProfileConfirm, style = MaterialTheme.typography.bodySmall)
+                Button(
+                    onClick = { showClearProfileDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(strings.clearProfile)
+                }
+            }
         }
+    }
+
+    if (showClearProfileDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearProfileDialog = false },
+            title = { Text(strings.clearProfile) },
+            text = { Text(strings.clearProfileConfirm) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        profileViewModel.clearAll()
+                        showClearProfileDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) { Text(strings.delete) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearProfileDialog = false }) { Text(strings.cancel) }
+            }
+        )
     }
 }
 

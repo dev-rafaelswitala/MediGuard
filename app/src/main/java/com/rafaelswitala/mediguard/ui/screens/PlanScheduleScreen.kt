@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -64,9 +65,11 @@ fun PlanScheduleScreen(
     val exactTimes = remember { mutableStateListOf("08:00") }
     val selectedPeriods = remember { mutableStateListOf(DayPeriod.MORNING) }
     val selectedDays = remember { mutableStateListOf(DayOfWeekEnum.MONDAY) }
+    var weeklyTimes by remember {
+        mutableStateOf(DayOfWeekEnum.entries.associateWith { "08:00" })
+    }
     var intervalHours by remember { mutableStateOf("6") }
     var intervalStart by remember { mutableStateOf("08:00") }
-    var weeklyTime by remember { mutableStateOf("08:00") }
     var oneShotDate by remember { mutableStateOf("") }
     var oneShotTime by remember { mutableStateOf("08:00") }
     var initialized by remember(medicationId) { mutableStateOf(false) }
@@ -102,11 +105,19 @@ fun PlanScheduleScreen(
                 }
                 FrequencyType.WEEKLY -> {
                     selectedDays.clear()
-                    selectedDays.addAll(ScheduleDataCodec.readDays(first.scheduleData))
-                    weeklyTime = plannerTime(
-                        ScheduleDataCodec.readInt(first.scheduleData, "hour", 8),
-                        ScheduleDataCodec.readInt(first.scheduleData, "minute", 0)
-                    )
+                    val weekly = existingSchedules.filter { it.scheduleType == FrequencyType.WEEKLY }
+                    val times = weeklyTimes.toMutableMap()
+                    weekly.forEach { schedule ->
+                        val time = plannerTime(
+                            ScheduleDataCodec.readInt(schedule.scheduleData, "hour", 8),
+                            ScheduleDataCodec.readInt(schedule.scheduleData, "minute", 0)
+                        )
+                        ScheduleDataCodec.readDays(schedule.scheduleData).forEach { day ->
+                            if (day !in selectedDays) selectedDays.add(day)
+                            times[day] = time
+                        }
+                    }
+                    weeklyTimes = times
                 }
                 FrequencyType.ONE_SHOT -> {
                     val trigger = ScheduleDataCodec.readLong(first.scheduleData, "triggerAtMillis", 0L)
@@ -124,7 +135,7 @@ fun PlanScheduleScreen(
 
     val drafts = plannerDrafts(
         selectedType, exactTimes, selectedPeriods, selectedDays, intervalHours,
-        intervalStart, weeklyTime, oneShotDate, oneShotTime
+        intervalStart, weeklyTimes, oneShotDate, oneShotTime
     )
 
     Scaffold(
@@ -196,14 +207,17 @@ fun PlanScheduleScreen(
                 }
                 FrequencyType.DAY_PERIOD -> {
                     Text(strings.everySelectedPeriodIntake, style = MaterialTheme.typography.bodySmall)
-                    DayPeriod.entries.forEach { period ->
-                        FilterChip(
-                            selected = period in selectedPeriods,
-                            onClick = {
-                                if (period in selectedPeriods) selectedPeriods.remove(period) else selectedPeriods.add(period)
-                            },
-                            label = { Text(period.label(language)) }
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        DayPeriod.entries.forEach { period ->
+                            FilterChip(
+                                selected = period in selectedPeriods,
+                                onClick = {
+                                    if (period in selectedPeriods) selectedPeriods.remove(period) else selectedPeriods.add(period)
+                                },
+                                label = { Text(period.label(language)) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
                 FrequencyType.INTERVAL -> {
@@ -222,21 +236,32 @@ fun PlanScheduleScreen(
                     )
                 }
                 FrequencyType.WEEKLY -> {
-                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         DayOfWeekEnum.entries.forEach { day ->
-                            FilterChip(
-                                selected = day in selectedDays,
-                                onClick = { if (day in selectedDays) selectedDays.remove(day) else selectedDays.add(day) },
-                                label = { Text(day.label(language).take(2)) }
-                            )
+                            val checked = day in selectedDays
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = checked,
+                                    onCheckedChange = {
+                                        if (it && day !in selectedDays) selectedDays.add(day)
+                                        else if (!it) selectedDays.remove(day)
+                                    }
+                                )
+                                Text(day.label(language), modifier = Modifier.weight(1f))
+                                OutlinedTextField(
+                                    value = weeklyTimes.getValue(day),
+                                    onValueChange = { weeklyTimes = weeklyTimes + (day to it) },
+                                    label = { Text(strings.oneShotTime) },
+                                    enabled = checked,
+                                    singleLine = true,
+                                    modifier = Modifier.weight(0.75f)
+                                )
+                            }
                         }
                     }
-                    OutlinedTextField(
-                        value = weeklyTime,
-                        onValueChange = { weeklyTime = it },
-                        label = { Text("${strings.onSelectedDaysAt} HH:mm") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
                 FrequencyType.ONE_SHOT -> {
                     OutlinedTextField(
@@ -268,7 +293,7 @@ private fun plannerDrafts(
     days: List<DayOfWeekEnum>,
     intervalHours: String,
     intervalStart: String,
-    weeklyTime: String,
+    weeklyTimes: Map<DayOfWeekEnum, String>,
     oneShotDate: String,
     oneShotTime: String
 ): List<MedicationSchedule> = when (type) {
@@ -286,10 +311,14 @@ private fun plannerDrafts(
         ) else emptyList()
     }
     FrequencyType.WEEKLY -> {
-        val time = plannerParseTime(weeklyTime)
-        if (time != null && days.isNotEmpty()) listOf(
-            MedicationSchedule(0, 0, type, ScheduleDataCodec.weekly(days, time.first, time.second), intakeGroupId = null)
-        ) else emptyList()
+        val parsed = days.mapNotNull { day -> plannerParseTime(weeklyTimes[day].orEmpty())?.let { day to it } }
+        if (days.isNotEmpty() && parsed.size == days.size) parsed.map { (day, time) ->
+            MedicationSchedule(
+                0, 0, type,
+                ScheduleDataCodec.weekly(listOf(day), time.first, time.second),
+                intakeGroupId = null
+            )
+        } else emptyList()
     }
     FrequencyType.ONE_SHOT -> {
         val date = runCatching {

@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.Collator
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -55,6 +57,7 @@ class MedicationViewModel @Inject constructor(
 
     val activeMedications: StateFlow<List<Medication>> = medicationRepository
         .getAllActiveMedications()
+        .map(::sortMedicationsByName)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -63,6 +66,7 @@ class MedicationViewModel @Inject constructor(
 
     val allMedications: StateFlow<List<Medication>> = medicationRepository
         .getAllMedications()
+        .map(::sortMedicationsByName)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -294,6 +298,13 @@ class MedicationViewModel @Inject constructor(
         }
     }
 
+}
+
+private fun sortMedicationsByName(medications: List<Medication>): List<Medication> {
+    val collator = Collator.getInstance(Locale.getDefault()).apply {
+        strength = Collator.PRIMARY
+    }
+    return medications.sortedWith { first, second -> collator.compare(first.name, second.name) }
 }
 
 data class MedicationUiState(

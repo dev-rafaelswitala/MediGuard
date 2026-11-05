@@ -4,16 +4,20 @@ import android.content.Context
 import android.net.Uri
 import com.rafaelswitala.mediguard.data.local.dao.HealthAllergyDao
 import com.rafaelswitala.mediguard.data.local.dao.HealthContactDao
+import com.rafaelswitala.mediguard.data.local.dao.HealthConditionDao
 import com.rafaelswitala.mediguard.data.local.dao.HealthProfileDao
 import com.rafaelswitala.mediguard.data.local.dao.MedicalDocumentDao
 import com.rafaelswitala.mediguard.data.local.entity.HealthAllergyEntity
 import com.rafaelswitala.mediguard.data.local.entity.HealthContactEntity
+import com.rafaelswitala.mediguard.data.local.entity.HealthConditionEntity
 import com.rafaelswitala.mediguard.data.local.entity.HealthProfileEntity
 import com.rafaelswitala.mediguard.data.local.entity.MedicalDocumentEntity
 import com.rafaelswitala.mediguard.domain.model.ContactCategory
 import com.rafaelswitala.mediguard.domain.model.DocumentCategory
 import com.rafaelswitala.mediguard.domain.model.HealthAllergy
 import com.rafaelswitala.mediguard.domain.model.HealthContact
+import com.rafaelswitala.mediguard.domain.model.HealthCondition
+import com.rafaelswitala.mediguard.domain.model.HealthConditionType
 import com.rafaelswitala.mediguard.domain.model.HealthProfile
 import com.rafaelswitala.mediguard.domain.model.MedicalDocument
 import com.rafaelswitala.mediguard.domain.repository.ProfileRepository
@@ -31,6 +35,7 @@ class ProfileRepositoryImpl @Inject constructor(
     private val profileDao: HealthProfileDao,
     private val allergyDao: HealthAllergyDao,
     private val contactDao: HealthContactDao,
+    private val conditionDao: HealthConditionDao,
     private val documentDao: MedicalDocumentDao
 ) : ProfileRepository {
 
@@ -53,6 +58,16 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAllergy(allergy: HealthAllergy) {
         allergyDao.delete(allergy.toEntity())
+    }
+
+    override fun observeConditions(): Flow<List<HealthCondition>> =
+        conditionDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    override suspend fun addCondition(condition: HealthCondition): Long =
+        conditionDao.insert(condition.toEntity())
+
+    override suspend fun deleteCondition(condition: HealthCondition) {
+        conditionDao.delete(condition.toEntity())
     }
 
     override fun observeContacts(): Flow<List<HealthContact>> =
@@ -114,11 +129,18 @@ class ProfileRepositoryImpl @Inject constructor(
         documentDao.clear()
         contactDao.clear()
         allergyDao.clear()
+        conditionDao.clear()
         profileDao.clear()
     }
 
     private fun HealthProfile.toEntity() = HealthProfileEntity(
         id = id,
+        fullName = fullName,
+        addressLine = addressLine,
+        postalCode = postalCode,
+        city = city,
+        phone = phone,
+        email = email,
         bloodType = bloodType,
         heightCm = heightCm,
         weightKg = weightKg,
@@ -134,6 +156,16 @@ class ProfileRepositoryImpl @Inject constructor(
         emergencyNotes = emergencyNotes,
         organDonor = organDonor,
         preferredPharmacy = preferredPharmacy,
+        preferredPharmacyAddress = preferredPharmacyAddress,
+        preferredPharmacyPhone = preferredPharmacyPhone,
+        pregnant = pregnant,
+        smoking = smoking,
+        cigarettesPerDay = cigarettesPerDay,
+        healthInsuranceName = healthInsuranceName ?: insuranceName,
+        healthInsuranceNumber = healthInsuranceNumber ?: insuranceNumber,
+        additionalInsurance = additionalInsurance,
+        careInsurance = careInsurance,
+        insuranceNotes = insuranceNotes,
         aidsNotes = aidsNotes,
         lastBloodPressure = lastBloodPressure,
         lastBloodSugar = lastBloodSugar,
@@ -143,6 +175,12 @@ class ProfileRepositoryImpl @Inject constructor(
 
     private fun HealthProfileEntity.toDomain() = HealthProfile(
         id = id,
+        fullName = fullName,
+        addressLine = addressLine,
+        postalCode = postalCode,
+        city = city,
+        phone = phone,
+        email = email,
         bloodType = bloodType,
         heightCm = heightCm,
         weightKg = weightKg,
@@ -158,6 +196,16 @@ class ProfileRepositoryImpl @Inject constructor(
         emergencyNotes = emergencyNotes,
         organDonor = organDonor,
         preferredPharmacy = preferredPharmacy,
+        preferredPharmacyAddress = preferredPharmacyAddress,
+        preferredPharmacyPhone = preferredPharmacyPhone,
+        pregnant = pregnant,
+        smoking = smoking,
+        cigarettesPerDay = cigarettesPerDay,
+        healthInsuranceName = healthInsuranceName ?: insuranceName,
+        healthInsuranceNumber = healthInsuranceNumber ?: insuranceNumber,
+        additionalInsurance = additionalInsurance,
+        careInsurance = careInsurance,
+        insuranceNotes = insuranceNotes,
         aidsNotes = aidsNotes,
         lastBloodPressure = lastBloodPressure,
         lastBloodSugar = lastBloodSugar,
@@ -177,6 +225,22 @@ class ProfileRepositoryImpl @Inject constructor(
         id = id,
         name = name,
         severity = severity,
+        notes = notes,
+        createdAt = createdAt
+    )
+
+    private fun HealthCondition.toEntity() = HealthConditionEntity(
+        id = id,
+        name = name,
+        type = type.name,
+        notes = notes,
+        createdAt = createdAt
+    )
+
+    private fun HealthConditionEntity.toDomain() = HealthCondition(
+        id = id,
+        name = name,
+        type = runCatching { HealthConditionType.valueOf(type) }.getOrDefault(HealthConditionType.CHRONIC),
         notes = notes,
         createdAt = createdAt
     )

@@ -6,6 +6,12 @@ package com.rafaelswitala.mediguard.domain.model
 
 data class HealthProfile(
     val id: Long = 1,
+    val fullName: String? = null,
+    val addressLine: String? = null,
+    val postalCode: String? = null,
+    val city: String? = null,
+    val phone: String? = null,
+    val email: String? = null,
     val bloodType: String? = null,
     val heightCm: Double? = null,
     val weightKg: Double? = null,
@@ -21,6 +27,16 @@ data class HealthProfile(
     val emergencyNotes: String? = null,
     val organDonor: Boolean? = null,
     val preferredPharmacy: String? = null,
+    val preferredPharmacyAddress: String? = null,
+    val preferredPharmacyPhone: String? = null,
+    val pregnant: Boolean? = null,
+    val smoking: Boolean? = null,
+    val cigarettesPerDay: Int? = null,
+    val healthInsuranceName: String? = null,
+    val healthInsuranceNumber: String? = null,
+    val additionalInsurance: String? = null,
+    val careInsurance: String? = null,
+    val insuranceNotes: String? = null,
     val aidsNotes: String? = null,
     val lastBloodPressure: String? = null,
     val lastBloodSugar: String? = null,
@@ -47,16 +63,26 @@ data class HealthAllergy(
 enum class ContactCategory {
     DOCTOR,
     PHARMACY,
-    EMERGENCY,
+    FAMILY,
     OTHER;
 
     fun label(strings: com.rafaelswitala.mediguard.ui.localization.AppStrings): String = when (this) {
         DOCTOR -> strings.categoryDoctor
         PHARMACY -> strings.categoryPharmacy
-        EMERGENCY -> strings.categoryEmergency
+        FAMILY -> strings.categoryFamily
         OTHER -> strings.categoryOther
     }
 }
+
+enum class HealthConditionType { CHRONIC, IMPLANT }
+
+data class HealthCondition(
+    val id: Long = 0,
+    val name: String,
+    val type: HealthConditionType,
+    val notes: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
+)
 
 data class HealthContact(
     val id: Long = 0,

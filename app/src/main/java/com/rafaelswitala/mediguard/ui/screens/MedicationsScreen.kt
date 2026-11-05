@@ -228,7 +228,7 @@ fun MedicationsScreen(
                             scheduleGroupId = firstScheduleGroupByMed[medication.id],
                             scheduleSummary = schedulesByMedication[medication.id]
                                 ?.takeIf { it.isNotEmpty() }
-                                ?.joinToString(" · ") { formatSchedule(it, strings, language) },
+                                ?.let { formatSchedulesSummary(it, strings, language) },
                             isPrn = medication.planType == MedicationPlanType.PRN,
                             onPlanClick = onNavigateToPlan,
                             onView = { medicationToViewId = medication.id },
@@ -539,6 +539,45 @@ private fun formatSchedule(
             "${strings.planOneShot}: $formatted"
         }
     }
+
+private fun formatSchedulesSummary(
+    schedules: List<MedicationSchedule>,
+    strings: AppStrings,
+    language: com.rafaelswitala.mediguard.data.settings.AppLanguage
+): String {
+    val groups = schedules.groupBy { it.scheduleType }
+    val lines = groups.map { (type, allItems) ->
+        val items = allItems.take(4)
+        when (type) {
+            FrequencyType.EXACT_TIME -> "${strings.daily}: " + items.joinToString(", ") {
+                formatScheduleTime(
+                    ScheduleDataCodec.readInt(it.scheduleData, "hour", 8),
+                    ScheduleDataCodec.readInt(it.scheduleData, "minute", 0)
+                )
+            }
+            FrequencyType.WEEKLY -> "${strings.weekly}: " + items.flatMap { schedule ->
+                val time = formatScheduleTime(
+                    ScheduleDataCodec.readInt(schedule.scheduleData, "hour", 8),
+                    ScheduleDataCodec.readInt(schedule.scheduleData, "minute", 0)
+                )
+                ScheduleDataCodec.readDays(schedule.scheduleData).map { "${it.label(language).take(2)} $time" }
+            }.joinToString(", ")
+            FrequencyType.DAY_PERIOD -> "${strings.dayPeriod}: " + items.joinToString(", ") {
+                ScheduleDataCodec.readPeriod(it.scheduleData).label(language)
+            }
+            FrequencyType.INTERVAL, FrequencyType.TIME_RANGE, FrequencyType.ONE_SHOT ->
+                items.joinToString(", ") { formatSchedule(it, strings, language) }
+        }
+    }
+    val shown = lines.take(3)
+    val shownTypes = groups.keys.take(3)
+    val shownCount = shownTypes.sumOf { groups.getValue(it).take(4).size }
+    val remaining = schedules.size - shownCount
+    return buildList {
+        addAll(shown)
+        if (remaining > 0) add("+$remaining ${strings.moreSchedules}")
+    }.joinToString("\n")
+}
 
 private fun formatScheduleTime(hour: Int, minute: Int): String =
     "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"

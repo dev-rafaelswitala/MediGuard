@@ -125,6 +125,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideHealthConditionDao(database: AppDatabase) = database.healthConditionDao()
+
+    @Provides
+    @Singleton
     fun provideMedicalDocumentDao(database: AppDatabase) = database.medicalDocumentDao()
 
     @Provides
