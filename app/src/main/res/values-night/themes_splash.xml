@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dunkler Splash: Logo bleibt transparent auf dunklem Teal, ohne grelles Grün. -->
+    <style name="Theme.MediGuard.Splash" parent="Theme.MediGuard">
+        <item name="android:windowBackground">@drawable/splash_background_dark</item>
+        <item name="android:colorBackground">#FF0B1B22</item>
+        <item name="android:statusBarColor">#FF0B1B22</item>
+        <item name="android:navigationBarColor">#FF0B1B22</item>
+    </style>
+</resources>

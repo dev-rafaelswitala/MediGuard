@@ -96,8 +96,8 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(strings.appName) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    titleContentColor = MaterialTheme.colorScheme.onSecondary
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
@@ -236,22 +236,20 @@ fun HomeScreen(
 
 @Composable
 private fun HeaderCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box {
-            Image(
-                painter = painterResource(R.drawable.app_logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Fit
-            )
-        }
+        Image(
+            painter = painterResource(R.drawable.app_logo_transparent),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .height(88.dp),
+            contentScale = ContentScale.Fit
+        )
     }
 }
 

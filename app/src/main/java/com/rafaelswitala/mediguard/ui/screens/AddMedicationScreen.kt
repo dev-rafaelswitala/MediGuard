@@ -94,20 +94,9 @@ fun AddMedicationScreen(
     var doseQuantity by remember { mutableStateOf("1") }
     var medicationFormType by remember { mutableStateOf(MedicationFormType.TABLET) }
     var planType by remember { mutableStateOf(MedicationPlanType.RECURRING) }
-    var oneShotDate by remember { mutableStateOf("") }
-    var oneShotTime by remember { mutableStateOf("08:00") }
     var supplyAlertEnabled by remember { mutableStateOf(true) }
     var supplyAlertThreshold by remember { mutableStateOf("7") }
-    var selectedType by remember { mutableStateOf(FrequencyType.EXACT_TIME) }
-    var exactTimes by remember { mutableStateOf("08:00") }
-    var rangeStart by remember { mutableStateOf("08:00") }
-    var rangeEnd by remember { mutableStateOf("10:00") }
-    var intervalHours by remember { mutableStateOf("6") }
-    var intervalStart by remember { mutableStateOf("08:00") }
-    var weeklyTime by remember { mutableStateOf("08:00") }
     var initialized by remember(medicationId) { mutableStateOf(false) }
-    val selectedPeriods = remember { mutableStateListOf(DayPeriod.MORNING) }
-    val selectedDays = remember { mutableStateListOf(DayOfWeekEnum.MONDAY) }
 
     LaunchedEffect(medicationId) {
         viewModel.loadMedicationForEdit(medicationId)
@@ -139,61 +128,21 @@ fun AddMedicationScreen(
             planType = medication.planType
             supplyAlertEnabled = medication.supplyAlertEnabled
             supplyAlertThreshold = medication.supplyAlertThreshold.toString()
-            if (medication.planType == MedicationPlanType.ONE_SHOT) {
-                val trigger = editingSchedules.firstOrNull()?.let {
-                    ScheduleDataCodec.readLong(it.scheduleData, "triggerAtMillis", 0L)
-                } ?: 0L
-                if (trigger > 0L) {
-                    oneShotDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(trigger))
-                    oneShotTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(trigger))
-                }
-            } else if (medication.planType == MedicationPlanType.RECURRING) {
-                applyScheduleState(
-                    schedules = editingSchedules,
-                    setSelectedType = { selectedType = it },
-                    setExactTimes = { exactTimes = it },
-                    setIntervalHours = { intervalHours = it },
-                    setIntervalStart = { intervalStart = it },
-                    setWeeklyTime = { weeklyTime = it },
-                    selectedPeriods = selectedPeriods,
-                    selectedDays = selectedDays
-                )
-            }
         }
         initialized = true
     }
 
-    val scheduleDrafts = when (planType) {
-        MedicationPlanType.PRN -> emptyList()
-        MedicationPlanType.ONE_SHOT -> buildOneShotDraft(oneShotDate, oneShotTime)
-        MedicationPlanType.RECURRING -> buildScheduleDrafts(
-            selectedType = selectedType,
-            exactTimes = exactTimes,
-            rangeStart = rangeStart,
-            rangeEnd = rangeEnd,
-            selectedPeriods = selectedPeriods,
-            intervalHours = intervalHours,
-            intervalStart = intervalStart,
-            weeklyTime = weeklyTime,
-            selectedDays = selectedDays
-        )
-    }
     val doseQuantityValue = parseDecimalAmount(doseQuantity)
     val stockInputIsValid = if (medicationFormType.usesVolume()) {
         remainingVolumeMl.isBlank() || parseDecimalAmount(remainingVolumeMl) != null
     } else {
         remainingDoses.isBlank() || parseDecimalAmount(remainingDoses) != null
     }
-    val schedulesValid = when (planType) {
-        MedicationPlanType.PRN -> true
-        MedicationPlanType.ONE_SHOT, MedicationPlanType.RECURRING -> scheduleDrafts.isNotEmpty()
-    }
     val canSave = medicationName.isNotBlank() &&
         dosage.isNotBlank() &&
         doseQuantityValue != null &&
         doseQuantityValue >= MINIMUM_DOSE &&
         stockInputIsValid &&
-        schedulesValid &&
         hasValidTreatmentLimit(treatmentType, treatmentLimitMode, durationDays, treatmentLimitDoses)
 
     Scaffold(
@@ -209,9 +158,9 @@ fun AddMedicationScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    titleContentColor = MaterialTheme.colorScheme.onSecondary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSecondary
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
@@ -267,9 +216,9 @@ fun AddMedicationScreen(
                     )
 
                     if (isEditing) {
-                        viewModel.updateMedicationWithSchedules(medication, scheduleDrafts)
+                        viewModel.updateMedication(medication)
                     } else {
-                        viewModel.addMedicationWithSchedules(medication, scheduleDrafts)
+                        viewModel.addMedication(medication)
                     }
                     onNavigateBack()
                 },
@@ -476,128 +425,7 @@ fun AddMedicationScreen(
                 }
             }
 
-            when (planType) {
-                MedicationPlanType.PRN -> SectionCard {
-                    Text(strings.prnNoScheduleHint, style = MaterialTheme.typography.bodyMedium)
-                }
-                MedicationPlanType.ONE_SHOT -> SectionCard {
-                    Text(strings.planOneShot, style = MaterialTheme.typography.titleMedium)
-                    OutlinedTextField(
-                        value = oneShotDate,
-                        onValueChange = { oneShotDate = it },
-                        label = { Text("${strings.oneShotDate} (dd/MM/yyyy)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1
-                    )
-                    OutlinedTextField(
-                        value = oneShotTime,
-                        onValueChange = { oneShotTime = it },
-                        label = { Text(strings.oneShotTime) },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1
-                    )
-                }
-                MedicationPlanType.RECURRING -> SectionCard {
-                Text(strings.reminderType, style = MaterialTheme.typography.titleMedium)
-                ScheduleTypeSelector(
-                    selectedType = selectedType,
-                    onSelected = { selectedType = it }
-                )
-
-                when (selectedType) {
-                    FrequencyType.EXACT_TIME -> OutlinedTextField(
-                        value = exactTimes,
-                        onValueChange = { exactTimes = it },
-                        label = { Text(strings.timesExample) },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1
-                    )
-
-                    FrequencyType.TIME_RANGE -> Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = rangeStart,
-                            onValueChange = { rangeStart = it },
-                            label = { Text(strings.from) },
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1
-                        )
-                        OutlinedTextField(
-                            value = rangeEnd,
-                            onValueChange = { rangeEnd = it },
-                            label = { Text(strings.to) },
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1
-                        )
-                    }
-
-                    FrequencyType.DAY_PERIOD -> PeriodSelector(
-                        language = language,
-                        selectedPeriods = selectedPeriods,
-                        onToggle = { period ->
-                            if (period in selectedPeriods) {
-                                if (selectedPeriods.size > 1) selectedPeriods.remove(period)
-                            } else {
-                                selectedPeriods.add(period)
-                            }
-                        }
-                    )
-
-                    FrequencyType.INTERVAL -> {
-                        OutlinedTextField(
-                            value = intervalHours,
-                            onValueChange = { intervalHours = it.filter(Char::isDigit) },
-                            label = { Text(strings.intervalHours) },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        OutlinedTextField(
-                            value = intervalStart,
-                            onValueChange = { intervalStart = it },
-                            label = { Text(strings.startTime) },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1
-                        )
-                    }
-
-                    FrequencyType.WEEKLY -> {
-                        DaySelector(
-                            language = language,
-                            selectedDays = selectedDays,
-                            onToggle = { day ->
-                                if (day in selectedDays) {
-                                    if (selectedDays.size > 1) selectedDays.remove(day)
-                                } else {
-                                    selectedDays.add(day)
-                                }
-                            }
-                        )
-                        OutlinedTextField(
-                            value = weeklyTime,
-                            onValueChange = { weeklyTime = it },
-                            label = { Text(strings.weeklyTime) },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1
-                        )
-                    }
-
-                    FrequencyType.ONE_SHOT -> Unit
-                }
-
-                if (!canSave) {
-                    Text(
-                        strings.validationHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            }
-
-            if (planType != MedicationPlanType.RECURRING && !canSave) {
+            if (!canSave) {
                 Text(
                     strings.validationHint,
                     style = MaterialTheme.typography.bodySmall,

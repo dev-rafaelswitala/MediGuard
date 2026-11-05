@@ -10,9 +10,9 @@
 
     <style name="Theme.MediGuard.Splash" parent="Theme.MediGuard">
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:colorBackground">@color/logo_background</item>
-        <item name="android:statusBarColor">@color/logo_background</item>
-        <item name="android:navigationBarColor">@color/logo_background</item>
+        <item name="android:colorBackground">#FFF3FFFB</item>
+        <item name="android:statusBarColor">#FFF3FFFB</item>
+        <item name="android:navigationBarColor">#FFF3FFFB</item>
     </style>
 
     <style name="Theme.MediGuard.Dialog" parent="android:style/Theme.Material.Light.NoActionBar">

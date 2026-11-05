@@ -1,25 +1,25 @@
-# Screen-/Qualitäts-Audit (2026-11-05)
+# Screen-/Qualitäts-Audit
 
-Vollständige Prüfung aller Screens + Reminder-Pfad. Status: Fixes laufen auf `feature/ux-reminders-polish`.
+## 2026-11-05 – Plan/Gruppierung UX
+Branch: `feature/plan-and-grouping-ux`
 
-## P0 (kritisch)
-1. Snooze cancelt Window-End nicht → false MISSED
-2. Einzel-Confirm schließt Gruppen-Notification für Geschwister
-3. BootReceiver Unlock: History ohne windowEnd/scheduleId
-4. Edit-State-Race Medications ↔ AddMedication (id=0 Update)
-5. Späte DAY_PERIOD-Feuerung ohne markMissed
-6. App-Start Catch-up für abgelaufene Fenster
+### Erledigt
+- Medikament anlegen ohne Erinnerungsart → Button **Planen** → `PlanScheduleScreen`
+- Automatische Gruppierungs-Prompts entfernt
+- Selection: Bearbeiten (nur 1), Löschen, Link/LinkOff für Gruppe
+- Icon-Hintergrund weiß (kein Petrolgrün), Splash hell/dunkel getrennt
+- Home-Logo transparent ohne Karten-Rahmen
+- TopAppBars auf `surface` (Dark Mode)
+- Bottom-Tab „Mehr“ kurz
 
-## P1 (UX)
-7. TopAppBar/Padding/Cards vereinheitlichen
-8. Settings Back tot / More vs Settings
-9. Home Stop-Alarm Semantik
-10. MedicationCard Spacing/Typo
-11. Time-Picker statt Freitext (schrittweise)
-12. TIME_RANGE tot oder wieder aktivieren
-13. DirectBoot DayPeriodSettings.Default statt User-Prefs
-14. Profil Save/Hydration
-15. Snackbars für ViewModel-Messages
+### Edge Cases bedacht
+- Gruppieren nur wenn alle geplant und ungruppiert
+- Beitritt: 1 gruppierte + n ungruppierte
+- Gruppe lösen → Schedules weg → wieder Planen
+- Bereits gruppierte nicht in andere Gruppe ziehen (außer Join-Fall)
+- Tageszeit: Mehrfachauswahl = mehrere Einnahmen/Tag (Hilfetext)
 
-## P2
-Icons, Dead-Code, DynamicColor Default false, LazyColumn Keys, Farben Due vs Missed vs LowSupply
+### Offen / weiter beobachten
+- Launcher-Icon-Cache am Emulator manchmal alt bis Neuinstall
+- Freitext-Zeiten statt TimePicker (nächster Polish)
+- Bestehende Testdaten haben schon Zeiten → Planen nur nach Lösen/Neuanlage sichtbar

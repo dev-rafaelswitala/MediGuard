@@ -15,6 +15,7 @@ import com.rafaelswitala.mediguard.ui.screens.AddMedicationScreen
 import com.rafaelswitala.mediguard.ui.screens.HistoryScreen
 import com.rafaelswitala.mediguard.ui.screens.HomeScreen
 import com.rafaelswitala.mediguard.ui.screens.MedicationsScreen
+import com.rafaelswitala.mediguard.ui.screens.PlanScheduleScreen
 import com.rafaelswitala.mediguard.ui.screens.ProfileScreen
 import com.rafaelswitala.mediguard.ui.screens.SettingsScreen
 import com.rafaelswitala.mediguard.viewmodel.HistoryViewModel
@@ -28,6 +29,9 @@ sealed class Route(val route: String) {
     data object AddMedication : Route("add_medication")
     data object EditMedication : Route("edit_medication/{medicationId}") {
         fun createRoute(medicationId: Long): String = "edit_medication/$medicationId"
+    }
+    data object PlanSchedule : Route("plan_schedule/{medicationId}") {
+        fun createRoute(medicationId: Long): String = "plan_schedule/$medicationId"
     }
     data object History : Route("history")
     data object Profile : Route("profile")
@@ -74,6 +78,9 @@ fun AppNavigation(navController: NavHostController) {
                 onNavigateSettings = { navigateTab(Route.Settings.route) },
                 onNavigateToEdit = { medicationId ->
                     navController.navigate(Route.EditMedication.createRoute(medicationId))
+                },
+                onNavigateToPlan = { medicationId ->
+                    navController.navigate(Route.PlanSchedule.createRoute(medicationId))
                 }
             )
         }
@@ -92,6 +99,17 @@ fun AppNavigation(navController: NavHostController) {
             AddMedicationScreen(
                 viewModel = medicationViewModel,
                 medicationId = backStackEntry.arguments?.getLong("medicationId"),
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Route.PlanSchedule.route,
+            arguments = listOf(navArgument("medicationId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            PlanScheduleScreen(
+                viewModel = medicationViewModel,
+                medicationId = backStackEntry.arguments?.getLong("medicationId") ?: return@composable,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

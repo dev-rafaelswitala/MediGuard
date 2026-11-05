@@ -19,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +43,9 @@ fun MedicationCard(
     selected: Boolean = false,
     onSelectionChange: (Boolean) -> Unit = {},
     scheduleGroupId: Int? = null,
+    scheduleSummary: String? = null,
+    isPrn: Boolean = false,
+    onPlanClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -130,6 +134,29 @@ fun MedicationCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+            if (!selectionMode) {
+                when {
+                    isPrn -> Text(
+                        strings.asNeeded,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    scheduleSummary == null -> TextButton(onClick = { onPlanClick(medication.id) }) {
+                        Text(strings.plan)
+                    }
+                    else -> TextButton(
+                        onClick = { onPlanClick(medication.id) },
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        Text(
+                            text = scheduleSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
