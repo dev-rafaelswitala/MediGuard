@@ -3,13 +3,13 @@
 | Version | Stand | Notiz |
 |---------|-------|-------|
 | 1.0 | vor V2 | Basis-Erinnerungen, 4 Tabs |
-| **2.0** | lokal (Debug-APK) | Profil, Historie-Edit/Filter, ONE_SHOT/PRN, Slot-Gruppierung, Tageszeit-Fenster |
-| 2.1 (geplant) | in Arbeit | neues MD-Logo, UX-Polish, Reminder-Zuverlässigkeit |
+| **2.0** | `main` @ de40c46 | Profil, Historie-Edit/Filter, ONE_SHOT/PRN, Slot-Gruppierung, Tageszeit-Fenster, MD-Logo |
+| **2.1-dev** | `dev` @ 9d412e1 | Reminder-Fixes (snooze/window-end, boot unlock, catch-up), UX-Chrome, Edit-Race |
 
-## Branches (Soll)
-- `main` – Releases
-- `dev` – Integration
-- `feature/*` – Arbeit
+## Branches (Ist)
+- `main` – V2.0 Snapshot (ahead of origin, **nicht gepusht**)
+- `dev` – Integration inkl. UX/Reminder-Polish
+- `feature/ux-reminders-polish` – gemerged nach `dev`
 
 ## APK (lokal, nicht im Git)
 - `MediGuardV2.0.apk` im Projektroot (Debug)
